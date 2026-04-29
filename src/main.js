@@ -279,29 +279,53 @@ const LEVELS = [
       { x: 58, y: 104, width: 58, direction: "down" }
     ]
   },
-  {
+      {
     name: "Moon Shaft",
     report:
-      "Ancient Engineer Report #4:\n𓂀 𓃭 𓊹 𓇳 𓈖 𓆣 𓋹\n𓉐 𓏏 𓐍 𓄿 𓅓 𓆑 𓂋\n𓁐 𓃀 𓇋 𓌳 𓎛 𓊃 𓊪",
+      "Ancient Engineer Report #4:\nThe Moon Shaft still follows the old crusher path.\nTwo lunar seals have been added to the chamber lock.\nWake both seals, survive the shaft, then use the exit.",
     startX: 36,
     startY: 220,
     goal: { x: 430, y: 60, width: 54, height: 60, kind: "door", label: "EXIT" },
+    puzzle: {
+      requiredSwitchCount: 2,
+      switches: [
+        { id: "left-moon-seal", x: 70, y: 167, width: 30, height: 8 },
+        { id: "right-moon-seal", x: 350, y: 224, width: 30, height: 8 }
+      ]
+    },
+    decorations: [
+      // No extra left ceiling ledge here. That was causing the doubled-up ruin look.
+      //{ type: "ceilingLedge", x: 210, y: 72, width: 70, height: 12 }
+    ],
     solids: [
-      { x: 0, y: 232, width: 420, height: 38, style: "stone" }, // Ground
-      { x: 102, y: 78, width: 16, height: 154, style: "pillar" },
-      { x: 52+15, y: 175, width: 35, height: 10, style: "pillar" }, // Platform
-      { x: 0, y: 120, width: 35, height: 10, style: "pillar" }, // Platform
-      { x: 196, y: 118, width: 16, height: 114, style: "pillar" },
-      { x: 290, y: 118, width: 16, height: 114, style: "pillar" },
-      { x: 384, y: 118, width: 16, height: 114, style: "pillar" }
+      // Same original collision positions.
+      { x: 0, y: 232, width: 480, height: 38, style: "backgroundFloor" },
+
+      // Same pillar collision positions, but now rendered using actual Pyramid Ruins assets.
+      { x: 102, y: 78, width: 16, height: 154, style: "assetPillar" },
+
+      // This small left platform stays, but the far-left overlapped platform is now invisible.
+      { x: 52 + 20, y: 175, width: 30, height: 10, style: "ruinLedge" },
+      { x: 0, y: 120, width: 38, height: 10, style: "ruinLedge" },
+
+      // This small right platform stays, but the far-right overlapped platform is now invisible.
+      { x: 395, y: 175, width: 35, height: 10, style: "ruinLedge" },
+      { x: 433, y: 120, width: 35, height: 10, style: "ruinLedge" },
+
+      { x: 196, y: 118, width: 16, height: 114, style: "assetPillar" },
+      { x: 290, y: 118, width: 16, height: 114, style: "assetPillar" },
+      { x: 384, y: 118, width: 16, height: 100, style: "assetPillar" }
     ],
     crushers: [
       { x: 156, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 0, fake: false },
-      { x: 250, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 720, fake: false },
+
+      // This crusher still exists for collision/timing, but its art is hidden.
+      { x: 250, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 720, fake: false, invisibleArt: true },
+
       { x: 344, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 0, fake: true }
     ],
     spikes: [
-      
+      { x: 69, y: 187, width: 34, direction: "down" }
     ]
   },
   {
@@ -2470,13 +2494,18 @@ class GameScene extends Phaser.Scene {
     return Boolean(this.puzzleState?.hasPuzzle && !this.puzzleState.unlocked);
   }
 
-  drawSolidRect(graphics, rect) {
-    if (rect.style === "backgroundFloor") {
+    drawSolidRect(graphics, rect) {
+    if (rect.style === "backgroundFloor" || rect.style === "invisible") {
       return;
     }
 
     if (rect.style === "ruinLedge") {
       this.drawRuinPlatform(rect);
+      return;
+    }
+
+    if (rect.style === "assetPillar") {
+      this.drawAssetPillar(rect);
       return;
     }
 
@@ -2550,6 +2579,54 @@ class GameScene extends Phaser.Scene {
         .image(rect.x + tileIndex * 16, rect.y, PYRAMID_TILEGROUND_KEY, frame)
         .setOrigin(0)
         .setDepth(5);
+    }
+  }
+
+  drawAssetPillar(rect) {
+    // Draws skinny vertical pillars using the Pyramid Ruins tile assets instead of gray debug rectangles.
+    // Collision still comes from the original solid rect.
+    if (!this.textures.exists(PYRAMID_TILEGROUND_KEY)) {
+      return;
+    }
+
+    const tileSize = 16;
+
+    // These frames are the custom skinny pillar pieces from PR_TileGround 16x16.png.
+    const topFrame = 22;
+    const middleFrame = 34;
+    const lowerMiddleFrame = 46;
+    const bottomFrame = 58;
+
+    const tileCount = Math.max(2, Math.ceil(rect.height / tileSize));
+
+    for (let tileIndex = 0; tileIndex < tileCount; tileIndex += 1) {
+      let frame = middleFrame;
+
+      if (tileIndex === 0) {
+        frame = topFrame;
+      } else if (tileIndex === tileCount - 1) {
+        frame = bottomFrame;
+      } else if (tileIndex % 2 === 0) {
+        frame = lowerMiddleFrame;
+      }
+
+      const tileY = rect.y + tileIndex * tileSize;
+      const remainingHeight = rect.y + rect.height - tileY;
+
+      // Do not draw past the original collision height.
+      if (remainingHeight <= 0) {
+        break;
+      }
+
+      const pillarTile = this.add
+        .image(rect.x, tileY, PYRAMID_TILEGROUND_KEY, frame)
+        .setOrigin(0)
+        .setDepth(5);
+
+      // If the final tile would stick out too much, hide the excess by scaling slightly.
+      if (remainingHeight < tileSize) {
+        pillarTile.setCrop(0, 0, tileSize, remainingHeight);
+      }
     }
   }
 
