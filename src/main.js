@@ -4,6 +4,16 @@ const GAME_WIDTH = 480;
 const GAME_HEIGHT = 270;
 const TOTAL_LEVELS = 5;
 const PROGRESS_STORAGE_KEY = "crab-out-of-nile-progress";
+const MAIN_MENU_BACKGROUND_KEY = "main-menu-background";
+const LEVEL_SELECT_BACKGROUND_KEY = "level-select-background";
+const MAIN_MENU_BACKGROUND_URL = new URL(
+  "../assets/main_menu_background.png",
+  import.meta.url
+).href;
+const LEVEL_SELECT_BACKGROUND_URL = new URL(
+  "../assets/level_selector_background.png",
+  import.meta.url
+).href;
 
 const COLORS = {
   sandDark: 0x7a5326,
@@ -164,14 +174,31 @@ const LEVELS = [
 ];
 
 const LEVEL_NODE_POSITIONS = [
-  { x: 74, y: 205 },
-  { x: 145, y: 184 },
-  { x: 224, y: 156 },
-  { x: 306, y: 120 },
-  { x: 382, y: 82 }
+  { x: 228, y: 74 },
+  { x: 286, y: 102 },
+  { x: 196, y: 134 },
+  { x: 142, y: 166 },
+  { x: 98, y: 198 }
 ];
 
-const EXIT_POINT = { x: 434, y: 50 };
+const LEVEL_ROUTE_POINTS = [
+  LEVEL_NODE_POSITIONS[0],
+  { x: 258, y: 88 },
+  LEVEL_NODE_POSITIONS[1],
+  { x: 252, y: 116 },
+  { x: 224, y: 126 },
+  LEVEL_NODE_POSITIONS[2],
+  { x: 170, y: 150 },
+  LEVEL_NODE_POSITIONS[3],
+  { x: 118, y: 182 },
+  LEVEL_NODE_POSITIONS[4],
+  { x: 170, y: 208 },
+  { x: 260, y: 214 },
+  { x: 324, y: 220 }
+];
+
+const LEVEL_ROUTE_ACTIVE_SEGMENT_COUNTS = [0, 2, 5, 7, 13];
+const EXIT_POINT = { x: 376, y: 224 };
 
 const sharedState = {
   musicOn: true,
@@ -630,12 +657,44 @@ function addCrtOverlay(scene) {
   return graphics;
 }
 
-function addMenuBackground(scene) {
-  drawSky(scene);
-  drawStars(scene);
-  drawPyramids(scene);
+function preloadImageIfNeeded(scene, key, url) {
+  if (!scene.textures.exists(key)) {
+    scene.load.image(key, url);
+  }
+}
 
-  scene.add.ellipse(60, 38, 26, 26, 0xfaf0ae, 0.85);
+function addScaledBackgroundImage(scene, textureKey, fallbackDrawer) {
+  if (!scene.textures.exists(textureKey)) {
+    fallbackDrawer(scene);
+    return null;
+  }
+
+  return scene.add
+    .image(0, 0, textureKey)
+    .setOrigin(0)
+    .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+    .setDepth(-10);
+}
+
+function addMenuBackground(scene) {
+  addScaledBackgroundImage(scene, MAIN_MENU_BACKGROUND_KEY, () => {
+    drawSky(scene);
+    drawStars(scene);
+    drawPyramids(scene);
+    scene.add.ellipse(60, 38, 26, 26, 0xfaf0ae, 0.85).setDepth(-8);
+  });
+
+  scene.add
+    .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x120d07, 0.16)
+    .setDepth(-7);
+}
+
+function addLevelSelectBackground(scene) {
+  addScaledBackgroundImage(scene, LEVEL_SELECT_BACKGROUND_KEY, drawPyramidInterior);
+
+  scene.add
+    .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x120d07, 0.12)
+    .setDepth(-7);
 }
 
 function drawDashedLine(scene, startX, startY, endX, endY, color, alpha = 1) {
@@ -662,22 +721,28 @@ function drawDashedLine(scene, startX, startY, endX, endY, color, alpha = 1) {
 
 function drawLevelSelectExit(scene) {
   const graphics = scene.add.graphics();
+  const exitOuterRadius = 18;
+  const exitInnerRadius = 10;
+  const shaftX = EXIT_POINT.x;
+  const shaftY = EXIT_POINT.y;
 
-  graphics.fillStyle(COLORS.wallDark, 1);
-  graphics.fillRoundedRect(410, 22, 44, 70, 8);
+  graphics.fillStyle(COLORS.wallDark, 0.96);
+  graphics.fillCircle(shaftX, shaftY, exitOuterRadius);
+  graphics.fillStyle(COLORS.waterDeep, 1);
+  graphics.fillCircle(shaftX, shaftY, exitInnerRadius);
   graphics.lineStyle(2, COLORS.gold, 1);
-  graphics.strokeRoundedRect(410, 22, 44, 70, 8);
-
-  graphics.fillStyle(0xf4df95, 0.25);
-  graphics.fillTriangle(432, 22, 454, 92, 410, 92);
+  graphics.strokeCircle(shaftX, shaftY, exitOuterRadius);
+  graphics.lineStyle(1, 0xfff4c7, 0.7);
+  graphics.strokeCircle(shaftX, shaftY, exitInnerRadius + 4);
 
   scene.add
-    .text(432, 58, "EXIT", {
+    .text(shaftX, shaftY - 28, "EXIT SHAFT", {
       fontFamily: FONTS.ui,
-      fontSize: "12px",
+      fontSize: "11px",
       color: COLORS.white
     })
-    .setOrigin(0.5);
+    .setOrigin(0.5)
+    .setDepth(12);
 }
 
 function createLockIcon(scene) {
@@ -742,6 +807,10 @@ function createLevelNode(scene, x, y, levelIndex, unlocked, onSelect) {
 class MainMenuScene extends Phaser.Scene {
   constructor() {
     super("MainMenuScene");
+  }
+
+  preload() {
+    preloadImageIfNeeded(this, MAIN_MENU_BACKGROUND_KEY, MAIN_MENU_BACKGROUND_URL);
   }
 
   create() {
@@ -844,11 +913,19 @@ class LevelSelectScene extends Phaser.Scene {
     super("LevelSelectScene");
   }
 
+  preload() {
+    preloadImageIfNeeded(
+      this,
+      LEVEL_SELECT_BACKGROUND_KEY,
+      LEVEL_SELECT_BACKGROUND_URL
+    );
+  }
+
   create() {
     const highestUnlockedLevel = getHighestUnlockedLevel(this);
     const clearBannerText = this.registry.get("clearBannerText");
 
-    drawPyramidInterior(this);
+    addLevelSelectBackground(this);
     drawLevelSelectExit(this);
     addSceneTitle(this, "Level Select", "Choose an unlocked chamber");
 
@@ -860,24 +937,25 @@ class LevelSelectScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const pathPoints = [...LEVEL_NODE_POSITIONS, EXIT_POINT];
+    const pathPoints = [...LEVEL_ROUTE_POINTS, EXIT_POINT];
 
     for (let index = 0; index < pathPoints.length - 1; index += 1) {
       const start = pathPoints[index];
       const end = pathPoints[index + 1];
-      const activeSegment =
-        index < highestUnlockedLevel - 1 ||
-        (index === TOTAL_LEVELS - 1 && highestUnlockedLevel === TOTAL_LEVELS);
 
-      drawDashedLine(
-        this,
-        start.x,
-        start.y,
-        end.x,
-        end.y,
-        activeSegment ? COLORS.gold : COLORS.wallLine,
-        activeSegment ? 0.95 : 0.35
-      );
+      drawDashedLine(this, start.x, start.y, end.x, end.y, COLORS.wallDark, 0.42);
+    }
+
+    const activeSegmentCount =
+      LEVEL_ROUTE_ACTIVE_SEGMENT_COUNTS[
+        Phaser.Math.Clamp(highestUnlockedLevel - 1, 0, LEVEL_ROUTE_ACTIVE_SEGMENT_COUNTS.length - 1)
+      ];
+
+    for (let index = 0; index < activeSegmentCount; index += 1) {
+      const start = pathPoints[index];
+      const end = pathPoints[index + 1];
+
+      drawDashedLine(this, start.x, start.y, end.x, end.y, COLORS.gold, 0.95);
     }
 
     LEVEL_NODE_POSITIONS.forEach((nodePosition, levelIndex) => {
