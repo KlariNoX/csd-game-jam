@@ -32,6 +32,28 @@ const TRACK_URLS = [
   new URL("../assets/Track 4.mp3", import.meta.url).href,
   new URL("../assets/Track 5.mp3", import.meta.url).href
 ];
+const LEVEL_BACKGROUNDS = [
+  {
+    key: "level-1-background",
+    url: new URL("../assets/Level01_Background.png", import.meta.url).href
+  },
+  {
+    key: "level-2-background",
+    url: new URL("../assets/Level02_Background.png", import.meta.url).href
+  },
+  {
+    key: "level-3-background",
+    url: new URL("../assets/Level03_Background.png", import.meta.url).href
+  },
+  {
+    key: "level-4-background",
+    url: new URL("../assets/Level04_Background.png", import.meta.url).href
+  },
+  {
+    key: "level-5-background",
+    url: new URL("../assets/Level05_Background.png", import.meta.url).href
+  }
+];
 const STORYBOARD_FRAMES = [
   {
     key: "storyboard-opening-1",
@@ -932,6 +954,31 @@ function preloadMainMenuAssets(scene) {
   return queuedAsset;
 }
 
+function getLevelBackground(levelIndex) {
+  return LEVEL_BACKGROUNDS[clampLevelIndex(levelIndex)];
+}
+
+function preloadLevelBackgroundIfNeeded(scene, levelIndex) {
+  const background = getLevelBackground(levelIndex);
+
+  return preloadImageIfNeeded(scene, background.key, background.url);
+}
+
+function addLevelBackground(scene, levelIndex) {
+  const background = getLevelBackground(levelIndex);
+
+  if (!scene.textures.exists(background.key)) {
+    drawPyramidInterior(scene);
+    return null;
+  }
+
+  return scene.add
+    .image(0, 0, background.key)
+    .setOrigin(0)
+    .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+    .setDepth(-10);
+}
+
 function ensureCrabAnimations(scene) {
   if (!scene.anims.exists("crab-idle")) {
     scene.anims.create({
@@ -1646,6 +1693,7 @@ class GameScene extends Phaser.Scene {
   }
 
   preload() {
+    preloadLevelBackgroundIfNeeded(this, getSelectedLevelIndex(this));
     preloadCrabSpritesheetIfNeeded(this);
   }
 
@@ -1666,7 +1714,7 @@ class GameScene extends Phaser.Scene {
     this.crushers = [];
 
     this.cameras.main.setBackgroundColor("#120d07");
-    drawPyramidInterior(this);
+    addLevelBackground(this, this.currentLevelIndex);
     this.levelLayout = this.drawLevel(this.currentLevel);
     addSceneTitle(this, `Level ${this.currentLevelIndex + 1}`, this.currentLevel.name);
 
@@ -1909,14 +1957,6 @@ class GameScene extends Phaser.Scene {
 
   drawLevel(level) {
     const graphics = this.add.graphics().setDepth(2);
-
-    graphics.fillStyle(COLORS.wallDark, 0.18);
-
-    graphics.lineStyle(2, COLORS.wallLight, 0.24);
-
-    for (let y = 90; y <= 198; y += 36) {
-      graphics.lineBetween(26, y, 454, y);
-    }
 
     this.drawGoalArt(graphics, level.goal);
 
