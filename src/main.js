@@ -6,12 +6,21 @@ const TOTAL_LEVELS = 5;
 const PROGRESS_STORAGE_KEY = "crab-out-of-nile-progress";
 const MAIN_MENU_BACKGROUND_KEY = "main-menu-background";
 const LEVEL_SELECT_BACKGROUND_KEY = "level-select-background";
+const CRAB_SPRITESHEET_KEY = "crab-sheet";
+const CRAB_FRAME_SIZE = 32;
+const CRAB_IDLE_FRAME = 0;
+const CRAB_SCUTTLE_FRAMES = [0, 1, 2, 3];
+const CRAB_JUMP_FRAME = 13;
 const MAIN_MENU_BACKGROUND_URL = new URL(
   "../assets/main_menu_background.png",
   import.meta.url
 ).href;
 const LEVEL_SELECT_BACKGROUND_URL = new URL(
   "../assets/level_selector_background.png",
+  import.meta.url
+).href;
+const CRAB_SPRITESHEET_URL = new URL(
+  "../assets/Crab Sprite Sheet.png",
   import.meta.url
 ).href;
 
@@ -1092,6 +1101,15 @@ class GameScene extends Phaser.Scene {
     super("GameScene");
   }
 
+  preload() {
+    if (!this.textures.exists(CRAB_SPRITESHEET_KEY)) {
+      this.load.spritesheet(CRAB_SPRITESHEET_KEY, CRAB_SPRITESHEET_URL, {
+        frameWidth: CRAB_FRAME_SIZE,
+        frameHeight: CRAB_FRAME_SIZE
+      });
+    }
+  }
+
   create() {
     this.currentLevelIndex = getSelectedLevelIndex(this);
     this.currentLevel = getCurrentLevel(this);
@@ -1101,7 +1119,6 @@ class GameScene extends Phaser.Scene {
     this.wetness = this.maxWetness;
     this.lowWetnessThreshold = 24;
     this.dryRate = 2.6;
-    this.scuttleFrameDuration = 110;
     this.facingDirection = 1;
     this.blades = [];
     this.crushers = [];
@@ -1111,12 +1128,13 @@ class GameScene extends Phaser.Scene {
     this.levelLayout = this.drawLevel(this.currentLevel);
     addSceneTitle(this, `Level ${this.currentLevelIndex + 1}`, this.currentLevel.name);
 
-    this.ensureCrabTextures();
+    this.ensureCrabAnimations();
 
     this.player = this.physics.add.sprite(
       this.currentLevel.startX,
       this.currentLevel.startY,
-      "crab-idle"
+      CRAB_SPRITESHEET_KEY,
+      CRAB_IDLE_FRAME
     );
     this.player
       .setOrigin(0.5, 1)
@@ -1126,7 +1144,8 @@ class GameScene extends Phaser.Scene {
       .setMaxVelocity(120, 380)
       .setDepth(8);
     this.player.body.setSize(18, 12);
-    this.player.body.setOffset(9, 24);
+    this.player.body.setOffset(7, 20);
+    this.player.anims.play("crab-idle");
 
     this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
     this.createCollisionWorld(this.levelLayout.solids);
@@ -1345,126 +1364,33 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-  ensureCrabTextures() {
-    const textureKeys = ["crab-idle", "crab-scuttle-a", "crab-scuttle-b", "crab-jump"];
-
-    if (textureKeys.every((key) => this.textures.exists(key))) {
-      return;
+  ensureCrabAnimations() {
+    if (!this.anims.exists("crab-idle")) {
+      this.anims.create({
+        key: "crab-idle",
+        frames: [{ key: CRAB_SPRITESHEET_KEY, frame: CRAB_IDLE_FRAME }],
+        frameRate: 1,
+        repeat: -1
+      });
     }
-
-    this.generateCrabTexture("crab-idle", "idle");
-    this.generateCrabTexture("crab-scuttle-a", "scuttleA");
-    this.generateCrabTexture("crab-scuttle-b", "scuttleB");
-    this.generateCrabTexture("crab-jump", "jump");
-  }
-
-  generateCrabTexture(textureKey, pose) {
-    const textureSize = 36;
-    const pixel = 2;
-    const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-    const outline = 0x7e2715;
-    const shell = COLORS.crab;
-    const highlight = 0xf3a08a;
-    const shadow = 0xb6452d;
-    const eyeWhite = 0xfff8de;
-    const pupil = 0x24150c;
-    const drawPixel = (x, y, width, height, color) => {
-      graphics.fillStyle(color, 1);
-      graphics.fillRect(x * pixel, y * pixel, width * pixel, height * pixel);
-    };
-
-    const leftLegs =
-      pose === "scuttleA"
-        ? [
-            { x: 2, y: 11, width: 3, height: 1 },
-            { x: 1, y: 13, width: 4, height: 1 }
-          ]
-        : pose === "scuttleB"
-          ? [
-              { x: 1, y: 10, width: 4, height: 1 },
-              { x: 2, y: 13, width: 3, height: 1 }
-            ]
-          : pose === "jump"
-            ? [{ x: 4, y: 12, width: 2, height: 1 }]
-            : [
-                { x: 2, y: 11, width: 3, height: 1 },
-                { x: 2, y: 13, width: 3, height: 1 }
-              ];
-    const rightLegs =
-      pose === "scuttleA"
-        ? [
-            { x: 13, y: 10, width: 4, height: 1 },
-            { x: 13, y: 13, width: 3, height: 1 }
-          ]
-        : pose === "scuttleB"
-          ? [
-              { x: 13, y: 11, width: 3, height: 1 },
-              { x: 12, y: 13, width: 4, height: 1 }
-            ]
-          : pose === "jump"
-            ? [{ x: 12, y: 12, width: 2, height: 1 }]
-            : [
-                { x: 13, y: 11, width: 3, height: 1 },
-                { x: 13, y: 13, width: 3, height: 1 }
-              ];
-    const claws =
-      pose === "jump"
-        ? [
-            { x: 2, y: 5, width: 2, height: 2 },
-            { x: 14, y: 5, width: 2, height: 2 }
-          ]
-        : pose === "scuttleA"
-          ? [
-              { x: 1, y: 7, width: 2, height: 2 },
-              { x: 14, y: 5, width: 2, height: 2 }
-            ]
-          : pose === "scuttleB"
-            ? [
-                { x: 2, y: 5, width: 2, height: 2 },
-                { x: 15, y: 7, width: 2, height: 2 }
-              ]
-            : [
-                { x: 2, y: 6, width: 2, height: 2 },
-                { x: 14, y: 6, width: 2, height: 2 }
-              ];
-
-    [...leftLegs, ...rightLegs].forEach((leg) => {
-      drawPixel(leg.x, leg.y, leg.width, leg.height, outline);
-    });
-    claws.forEach((claw) => {
-      drawPixel(claw.x, claw.y, claw.width, claw.height, outline);
-    });
-
-    drawPixel(4, 6, 10, 1, outline);
-    drawPixel(3, 7, 12, 4, outline);
-    drawPixel(4, 11, 10, 1, outline);
-    drawPixel(5, 5, 8, 1, outline);
-
-    drawPixel(5, 6, 8, 1, shell);
-    drawPixel(4, 7, 10, 3, shell);
-    drawPixel(5, 10, 8, 1, shell);
-    drawPixel(6, 5, 6, 1, shell);
-
-    drawPixel(6, 6, 5, 1, highlight);
-    drawPixel(5, 8, 2, 1, shadow);
-    drawPixel(11, 8, 2, 1, shadow);
-    drawPixel(7, 11, 1, 1, shadow);
-    drawPixel(10, 11, 1, 1, shadow);
-
-    drawPixel(6, 4, 1, 2, outline);
-    drawPixel(10, 4, 1, 2, outline);
-    drawPixel(6, 3, 2, 1, eyeWhite);
-    drawPixel(10, 3, 2, 1, eyeWhite);
-    drawPixel(7, 3, 1, 1, pupil);
-    drawPixel(10, 3, 1, 1, pupil);
-
-    if (pose !== "jump") {
-      drawPixel(7, 12, 1, 1, outline);
-      drawPixel(10, 12, 1, 1, outline);
+    if (!this.anims.exists("crab-scuttle")) {
+      this.anims.create({
+        key: "crab-scuttle",
+        frames: this.anims.generateFrameNumbers(CRAB_SPRITESHEET_KEY, {
+          frames: CRAB_SCUTTLE_FRAMES
+        }),
+        frameRate: 9,
+        repeat: -1
+      });
     }
-
-    graphics.generateTexture(textureKey, textureSize, textureSize);
-    graphics.destroy();
+    if (!this.anims.exists("crab-jump")) {
+      this.anims.create({
+        key: "crab-jump",
+        frames: [{ key: CRAB_SPRITESHEET_KEY, frame: CRAB_JUMP_FRAME }],
+        frameRate: 1,
+        repeat: -1
+      });
+    }
   }
 
   drawLevel(level) {
@@ -1914,7 +1840,7 @@ class GameScene extends Phaser.Scene {
     this.physics.world.pause();
     this.player.setVelocity(0, 0);
     this.player.setTint(0xffd27a);
-    this.player.setTexture("crab-jump");
+    this.player.anims.play("crab-jump", true);
     playSoundCue(this, "death");
     this.lowWetnessWarning
       .setVisible(true)
@@ -1981,23 +1907,21 @@ class GameScene extends Phaser.Scene {
   updatePlayerAnimation(time) {
     const onGround = this.player.body.blocked.down || this.player.body.touching.down;
     const horizontalSpeed = Math.abs(this.player.body.velocity.x);
-    let nextTexture = "crab-idle";
+    let nextAnim = "crab-idle";
 
     if (!onGround) {
-      nextTexture = "crab-jump";
+      nextAnim = "crab-jump";
       this.player.setAngle(this.player.body.velocity.y < 0 ? -5 : 5);
     } else if (horizontalSpeed > 5) {
-      nextTexture =
-        Math.floor(time / this.scuttleFrameDuration) % 2 === 0
-          ? "crab-scuttle-a"
-          : "crab-scuttle-b";
+      nextAnim = "crab-scuttle";
       this.player.setAngle(Math.sin(time / 90) * 2);
     } else {
       this.player.setAngle(0);
     }
 
-    if (this.player.texture.key !== nextTexture) {
-      this.player.setTexture(nextTexture);
+    const currentAnim = this.player.anims.currentAnim;
+    if (!currentAnim || currentAnim.key !== nextAnim) {
+      this.player.anims.play(nextAnim, true);
     }
   }
 
