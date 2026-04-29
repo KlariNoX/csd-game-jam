@@ -156,26 +156,35 @@ const LEVELS = [
     puzzle: {
       requiredSwitchCount: 2,
       switches: [
-        { id: "lower-glyph", x: 106, y: 181, width: 28, height: 8 },
-        { id: "upper-scarab", x: 252, y: 135, width: 30, height: 8 }
+        { id: "lower-glyph", x: 106, y: 183, width: 28, height: 8 },
+        { id: "upper-scarab", x: 250, y: 139, width: 30, height: 8 }
       ]
     },
+    decorations: [
+      // This upper shelf is intentionally above jump height. It frames the room
+      // with an unreachable hanging trap without becoming part of the route.
+      { type: "ceilingLedge", x: 52, y: 90, width: 88, height: 12 }
+    ],
     solids: [
-      { x: 0, y: 207, width: 70, height: 18, style: "backgroundFloor" },
-      { x: 92, y: 188, width: 54, height: 12, style: "ruinLedge" },
-      { x: 166, y: 170, width: 48, height: 12, style: "ruinLedge" },
-      { x: 236, y: 142, width: 64, height: 12, style: "ruinLedge" },
-      { x: 320, y: 162, width: 52, height: 12, style: "ruinLedge" },
-      { x: 390, y: 184, width: 46, height: 12, style: "ruinLedge" },
+      // Reachable route: low seal, climb to the high seal, then descend toward the locked exit.
+      { x: 0, y: 207, width: 72, height: 18, style: "backgroundFloor" },
+      { x: 92, y: 190, width: 54, height: 12, style: "ruinLedge" },
+      { x: 164, y: 174, width: 44, height: 12, style: "ruinLedge" },
+      { x: 232, y: 146, width: 66, height: 12, style: "ruinLedge" },
+      { x: 312, y: 166, width: 46, height: 12, style: "ruinLedge" },
+      { x: 378, y: 188, width: 50, height: 12, style: "ruinLedge" },
       { x: 428, y: 207, width: 52, height: 18, style: "backgroundFloor" }
     ],
     spikes: [
-      { x: 70, y: 207, width: 22 },
-      { x: 146, y: 207, width: 22 },
-      { x: 214, y: 207, width: 28 },
-      { x: 300, y: 207, width: 28 },
-      { x: 372, y: 207, width: 28 },
-      { x: 346, y: 162, width: 18 }
+      // Downward spikes hang from the unreachable shelf for atmosphere and danger readability.
+      { x: 68, y: 102, width: 58, direction: "down" },
+      { x: 72, y: 207, width: 20 },
+      { x: 146, y: 207, width: 18 },
+      { x: 208, y: 207, width: 24 },
+      { x: 296, y: 207, width: 28 },
+      { x: 354, y: 207, width: 22 },
+      // A small edge trap makes the exit approach more deliberate without requiring a perfect jump.
+      { x: 338, y: 166, width: 16 }
     ]
   },
   {
@@ -2055,6 +2064,10 @@ class GameScene extends Phaser.Scene {
       this.drawLavaPool(graphics, pool);
     });
 
+    (level.decorations || []).forEach((decoration) => {
+      this.drawLevelDecoration(graphics, decoration);
+    });
+
     level.solids.forEach((solid) => {
       this.drawSolidRect(graphics, solid);
     });
@@ -2074,6 +2087,25 @@ class GameScene extends Phaser.Scene {
     });
 
     return level;
+  }
+
+  drawLevelDecoration(graphics, decoration) {
+    if (decoration.type === "ceilingLedge") {
+      this.drawRuinPlatform(decoration);
+
+      graphics.fillStyle(0x2c170b, 0.56);
+      graphics.fillRect(
+        decoration.x - 2,
+        decoration.y + decoration.height,
+        decoration.width + 4,
+        3
+      );
+      graphics.lineStyle(1, COLORS.bronzeDark, 0.45);
+
+      for (let crackX = decoration.x + 12; crackX < decoration.x + decoration.width - 8; crackX += 22) {
+        graphics.lineBetween(crackX, decoration.y + decoration.height, crackX + 4, decoration.y + decoration.height + 5);
+      }
+    }
   }
 
   drawGoalArt(graphics, goal) {
@@ -2423,28 +2455,33 @@ class GameScene extends Phaser.Scene {
 
   drawSpikeStrip(graphics, spikeStrip) {
     const spikeHeight = 14;
+    const pointsDown = spikeStrip.direction === "down";
+    const baseY = pointsDown ? spikeStrip.y : spikeStrip.y - 4;
+    const tipY = pointsDown ? spikeStrip.y + spikeHeight : spikeStrip.y - spikeHeight;
 
     graphics.fillStyle(COLORS.bronzeDark, 1);
-    graphics.fillRect(spikeStrip.x, spikeStrip.y - 4, spikeStrip.width, 4);
+    graphics.fillRect(spikeStrip.x, baseY, spikeStrip.width, 4);
 
     for (let spikeX = spikeStrip.x; spikeX < spikeStrip.x + spikeStrip.width; spikeX += 12) {
       graphics.fillStyle(COLORS.bronze, 1);
+
+      // Floor spikes point up; unreachable shelf spikes use direction: "down".
       graphics.fillTriangle(
         spikeX,
-        spikeStrip.y - 4,
+        baseY + (pointsDown ? 4 : 0),
         spikeX + 6,
-        spikeStrip.y - spikeHeight,
+        tipY,
         spikeX + 12,
-        spikeStrip.y - 4
+        baseY + (pointsDown ? 4 : 0)
       );
       graphics.lineStyle(1, COLORS.bronzeDark, 0.65);
       graphics.strokeTriangle(
         spikeX,
-        spikeStrip.y - 4,
+        baseY + (pointsDown ? 4 : 0),
         spikeX + 6,
-        spikeStrip.y - spikeHeight,
+        tipY,
         spikeX + 12,
-        spikeStrip.y - 4
+        baseY + (pointsDown ? 4 : 0)
       );
     }
   }
@@ -3005,6 +3042,24 @@ class GameScene extends Phaser.Scene {
     return distanceX * distanceX + distanceY * distanceY <= radius * radius;
   }
 
+  getSpikeHitbox(spikeStrip) {
+    if (spikeStrip.direction === "down") {
+      return new Phaser.Geom.Rectangle(
+        spikeStrip.x,
+        spikeStrip.y,
+        spikeStrip.width,
+        16
+      );
+    }
+
+    return new Phaser.Geom.Rectangle(
+      spikeStrip.x,
+      spikeStrip.y - 16,
+      spikeStrip.width,
+      16
+    );
+  }
+
   checkHazards() {
     const hitbox = this.getPlayerHitbox();
 
@@ -3014,12 +3069,7 @@ class GameScene extends Phaser.Scene {
     }
 
     for (const spikeStrip of this.currentLevel.spikes || []) {
-      const spikeHitbox = new Phaser.Geom.Rectangle(
-        spikeStrip.x,
-        spikeStrip.y - 16,
-        spikeStrip.width,
-        16
-      );
+      const spikeHitbox = this.getSpikeHitbox(spikeStrip);
 
       if (Phaser.Geom.Intersects.RectangleToRectangle(hitbox, spikeHitbox)) {
         this.handleHazardDeath("Bronze spikes! Restarting...");
