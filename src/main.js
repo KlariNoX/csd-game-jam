@@ -210,7 +210,7 @@ function getMusicSettingLabel() {
 }
 
 function getSoundSettingLabel() {
-  return `Crab scuttle sound: ${sharedState.soundOn ? "On" : "Off"}`;
+  return `Scuttle SFX: ${sharedState.soundOn ? "On" : "Off"}`;
 }
 
 function resumeAudioContext(scene) {
