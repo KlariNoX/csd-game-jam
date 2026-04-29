@@ -85,7 +85,7 @@ const LEVELS = [
       "Ancient Engineer Report #1:\nThe bronze spikes were installed everywhere except the upper corridor.\nWe ran out of bronze before that strip.\nIf it looks suspiciously empty, trust it.",
     startX: 40,
     startY: 220,
-    goal: { x: 430, y: 164, width: 44, height: 88, kind: "river", label: "NILE" },
+    goal: { x: 430, y: 144, width: 34, height: 108, kind: "door", label: "EXIT" },
     solids: [
       { x: 0, y: 232, width: 92, height: 38, style: "stone" },
       { x: 82, y: 204, width: 52, height: 12, style: "stone" },
@@ -104,7 +104,7 @@ const LEVELS = [
       "Ancient Engineer Report #2:\nTwo blade carriages still spin.\nThe maintenance bay with the broken blade is the only passage I would use.\nPlease do not stand where the ropes still work.",
     startX: 42,
     startY: 220,
-    goal: { x: 430, y: 160, width: 44, height: 92, kind: "river", label: "NILE" },
+    goal: { x: 430, y: 140, width: 34, height: 112, kind: "door", label: "EXIT" },
     solids: [
       { x: 0, y: 232, width: 126, height: 38, style: "stone" },
       { x: 120, y: 206, width: 46, height: 12, style: "stone" },
@@ -124,7 +124,7 @@ const LEVELS = [
       "Ancient Engineer Report #3:\nWe ran out of lava in the middle channel.\nThat trench is only warm sand dressed up like a trap.\nStep on the dull one, not the bright ones.",
     startX: 42,
     startY: 220,
-    goal: { x: 428, y: 166, width: 44, height: 86, kind: "river", label: "NILE" },
+    goal: { x: 428, y: 146, width: 34, height: 106, kind: "door", label: "EXIT" },
     solids: [
       { x: 0, y: 232, width: 124, height: 38, style: "stone" },
       { x: 174, y: 206, width: 40, height: 12, style: "stone" },
@@ -144,7 +144,7 @@ const LEVELS = [
       "Ancient Engineer Report #4:\n𓂀 𓃭 𓊹 𓇳 𓈖 𓆣 𓋹\n𓉐 𓏏 𓐍 𓄿 𓅓 𓆑 𓂋\n𓁐 𓃀 𓇋 𓌳 𓎛 𓊃 𓊪",
     startX: 36,
     startY: 220,
-    goal: { x: 430, y: 160, width: 44, height: 92, kind: "river", label: "NILE" },
+    goal: { x: 430, y: 140, width: 34, height: 112, kind: "door", label: "EXIT" },
     solids: [
       { x: 0, y: 232, width: 420, height: 38, style: "stone" },
       { x: 102, y: 118, width: 16, height: 114, style: "pillar" },
@@ -165,12 +165,12 @@ const LEVELS = [
     startX: 34,
     startY: 220,
     goal: {
-      x: 420,
+      x: 410,
       y: 122,
       width: 48,
       height: 110,
-      kind: "doorlessExit",
-      label: "NO DOOR"
+      kind: "river",
+      label: "NILE"
     },
     solids: [
       { x: 0, y: 232, width: 84, height: 38, style: "stone" },
@@ -1089,7 +1089,7 @@ class MainMenuScene extends Phaser.Scene {
     createPanel(this, 26, 82, 218, 146);
 
     this.add
-      .text(36, 42, "Crab Out of Nile", {
+      .text(36, 42, "Untitled Crab Game", {
         fontFamily: FONTS.title,
         fontSize: "27px",
         color: COLORS.gold,
@@ -1100,7 +1100,7 @@ class MainMenuScene extends Phaser.Scene {
       .setDepth(30);
 
     this.add
-      .text(40, 68, "Tiny jam build", {
+      .text(40, 68, "CSD Game Jam submission", {
         ...LABEL_STYLE,
         fontSize: "12px"
       })
@@ -1111,7 +1111,7 @@ class MainMenuScene extends Phaser.Scene {
       .text(
         135,
         112,
-        "A crab escaped the tomb.\nNow it wants the Nile.",
+        "You're a crab in a Pyramid.\nNow you have to find a way out. Good luck!",
         {
           ...LABEL_STYLE,
           align: "center",
@@ -1716,6 +1716,27 @@ class GameScene extends Phaser.Scene {
         .setOrigin(0.5, 0)
         .setDepth(10);
 
+      return;
+    }
+
+    if (goal.kind === "door") {
+      graphics.fillStyle(COLORS.wallDark, 1);
+      graphics.fillRoundedRect(goal.x, goal.y, goal.width, goal.height, { tl: 22, tr: 22, bl: 0, br: 0 });
+      graphics.lineStyle(2, COLORS.metalDark, 1);
+      graphics.strokeRoundedRect(goal.x, goal.y, goal.width, goal.height, { tl: 22, tr: 22, bl: 0, br: 0 });
+      
+      graphics.fillStyle(COLORS.bronzeDark, 1);
+      graphics.fillRect(goal.x + 6, goal.y + 22, goal.width - 12, goal.height - 22);
+      
+      this.add
+        .text(goal.x + goal.width / 2, goal.y - 12, goal.label, {
+          fontFamily: FONTS.ui,
+          fontSize: "11px",
+          color: COLORS.gold
+        })
+        .setOrigin(0.5)
+        .setDepth(10);
+        
       return;
     }
 
