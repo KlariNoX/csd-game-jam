@@ -19,6 +19,13 @@ const COLORS = {
   locked: 0x443224,
   water: 0x2f98c7,
   waterDeep: 0x165c89,
+  lava: 0xd64d22,
+  lavaBright: 0xffb24c,
+  bronze: 0xb5782c,
+  bronzeDark: 0x6d4416,
+  metal: 0xc2ced7,
+  metalDark: 0x58656d,
+  danger: 0xff8d58,
   crab: 0xd95f43,
   white: "#fff8de",
   gold: "#f3d36b"
@@ -42,57 +49,112 @@ const LEVELS = [
   {
     name: "Burial Gate",
     report:
-      "Ancient Engineer Report #1:\nThe architect demanded a perfect chamber.\nUnfortunately, we ran out of bronze spikes.\nOne corridor remains embarrassingly safe.",
-    startX: 48,
-    startY: 208,
-    riverX: 400,
-    riverY: 146,
-    riverWidth: 80,
-    riverHeight: 124
+      "Ancient Engineer Report #1:\nThe bronze spikes were installed everywhere except the upper corridor.\nWe ran out of bronze before that strip.\nIf it looks suspiciously empty, trust it.",
+    startX: 40,
+    startY: 220,
+    goal: { x: 430, y: 164, width: 44, height: 88, kind: "river", label: "NILE" },
+    solids: [
+      { x: 0, y: 232, width: 92, height: 38, style: "stone" },
+      { x: 82, y: 204, width: 52, height: 12, style: "stone" },
+      { x: 142, y: 204, width: 142, height: 12, style: "stone" },
+      { x: 128, y: 170, width: 208, height: 12, style: "safe" },
+      { x: 330, y: 232, width: 96, height: 38, style: "stone" }
+    ],
+    spikes: [
+      { x: 102, y: 232, width: 220 },
+      { x: 144, y: 204, width: 138 }
+    ]
   },
   {
     name: "Sand Hall",
     report:
-      "Ancient Engineer Report #2:\nThe rotating blade trap was approved.\nUnfortunately, we ran out of rope.\nThe blades do not rotate.\nPlease do not tell the Pharaoh.",
-    startX: 56,
-    startY: 198,
-    riverX: 384,
-    riverY: 138,
-    riverWidth: 96,
-    riverHeight: 132
+      "Ancient Engineer Report #2:\nTwo blade carriages still spin.\nThe maintenance bay with the broken blade is the only passage I would use.\nPlease do not stand where the ropes still work.",
+    startX: 42,
+    startY: 220,
+    goal: { x: 430, y: 160, width: 44, height: 92, kind: "river", label: "NILE" },
+    solids: [
+      { x: 0, y: 232, width: 126, height: 38, style: "stone" },
+      { x: 120, y: 206, width: 46, height: 12, style: "stone" },
+      { x: 176, y: 184, width: 86, height: 12, style: "stone" },
+      { x: 266, y: 160, width: 86, height: 12, style: "stone" },
+      { x: 344, y: 232, width: 82, height: 38, style: "stone" }
+    ],
+    blades: [
+      { x1: 148, y1: 220, x2: 240, y2: 220, radius: 11, duration: 1600, phase: 0, broken: false },
+      { x1: 308, y1: 136, x2: 308, y2: 196, radius: 11, duration: 1800, phase: 450, broken: false },
+      { x1: 220, y1: 160, x2: 220, y2: 160, radius: 12, duration: 1600, phase: 0, broken: true, angle: 18 }
+    ]
   },
   {
     name: "Scarab Steps",
     report:
-      "Ancient Engineer Report #3:\nThe lava channel was planned beautifully.\nUnfortunately, we ran out of lava.\nWe filled it with warm sand instead.",
-    startX: 44,
-    startY: 190,
-    riverX: 370,
-    riverY: 132,
-    riverWidth: 110,
-    riverHeight: 138
+      "Ancient Engineer Report #3:\nWe ran out of lava in the middle channel.\nThat trench is only warm sand dressed up like a trap.\nStep on the dull one, not the bright ones.",
+    startX: 42,
+    startY: 220,
+    goal: { x: 428, y: 166, width: 44, height: 86, kind: "river", label: "NILE" },
+    solids: [
+      { x: 0, y: 232, width: 124, height: 38, style: "stone" },
+      { x: 174, y: 206, width: 40, height: 12, style: "stone" },
+      { x: 244, y: 216, width: 86, height: 18, style: "warmSand" },
+      { x: 360, y: 206, width: 42, height: 12, style: "stone" },
+      { x: 398, y: 232, width: 82, height: 38, style: "stone" }
+    ],
+    lavaPools: [
+      { x: 124, y: 232, width: 50, height: 38 },
+      { x: 214, y: 232, width: 30, height: 38 },
+      { x: 330, y: 232, width: 30, height: 38 }
+    ]
   },
   {
     name: "Moon Shaft",
     report:
-      "Ancient Engineer Report #4:\nThe crushing ceiling was installed.\nUnfortunately, we ran out of counterweights.\nIt only looks threatening.",
-    startX: 66,
-    startY: 182,
-    riverX: 354,
-    riverY: 126,
-    riverWidth: 126,
-    riverHeight: 144
+      "Ancient Engineer Report #4:\nThe crusher nearest the Nile never got its counterweight.\nIt is decorative, not deadly.\nEvery other ceiling block is eager to flatten visitors.",
+    startX: 36,
+    startY: 220,
+    goal: { x: 430, y: 160, width: 44, height: 92, kind: "river", label: "NILE" },
+    solids: [
+      { x: 0, y: 232, width: 420, height: 38, style: "stone" },
+      { x: 102, y: 118, width: 16, height: 114, style: "pillar" },
+      { x: 196, y: 118, width: 16, height: 114, style: "pillar" },
+      { x: 290, y: 118, width: 16, height: 114, style: "pillar" },
+      { x: 384, y: 118, width: 16, height: 114, style: "pillar" }
+    ],
+    crushers: [
+      { x: 156, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 0, fake: false },
+      { x: 250, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 720, fake: false },
+      { x: 344, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 0, fake: true }
+    ]
   },
   {
     name: "River Mouth",
     report:
-      "Ancient Engineer Report #5:\nThe final chamber was meant to be flawless.\nUnfortunately, we ran out of doors.\nThe exit is just sitting there.",
-    startX: 54,
-    startY: 174,
-    riverX: 338,
-    riverY: 120,
-    riverWidth: 142,
-    riverHeight: 150
+      "Ancient Engineer Report #5:\nWe used the leftover spikes, one blade, and a fake lava trench.\nThen we ran out of doors.\nThe huge opening on the right is not a trick. Just leave.",
+    startX: 34,
+    startY: 220,
+    goal: {
+      x: 420,
+      y: 122,
+      width: 48,
+      height: 110,
+      kind: "doorlessExit",
+      label: "NO DOOR"
+    },
+    solids: [
+      { x: 0, y: 232, width: 84, height: 38, style: "stone" },
+      { x: 98, y: 198, width: 72, height: 12, style: "safe" },
+      { x: 188, y: 176, width: 68, height: 12, style: "stone" },
+      { x: 286, y: 216, width: 66, height: 18, style: "warmSand" },
+      { x: 370, y: 188, width: 42, height: 12, style: "stone" },
+      { x: 404, y: 232, width: 76, height: 38, style: "stone" }
+    ],
+    spikes: [{ x: 84, y: 232, width: 94 }],
+    lavaPools: [
+      { x: 256, y: 232, width: 30, height: 38 },
+      { x: 352, y: 232, width: 18, height: 38 }
+    ],
+    blades: [
+      { x1: 222, y1: 144, x2: 222, y2: 198, radius: 10, duration: 1600, phase: 320, broken: false }
+    ]
   }
 ];
 
@@ -599,7 +661,9 @@ class SettingsScene extends Phaser.Scene {
 
   refreshLabels() {
     this.musicText.setText(`Music: ${sharedState.musicOn ? "On" : "Off"}`);
-    this.soundText.setText(`Sound: ${sharedState.soundOn ? "On" : "Off"}`);
+    this.soundText.setText(
+      `Crab scuttle sound: ${sharedState.soundOn ? "On" : "Off"}`
+    );
   }
 }
 
@@ -772,155 +836,799 @@ class GameScene extends Phaser.Scene {
   create() {
     this.currentLevelIndex = getSelectedLevelIndex(this);
     this.currentLevel = getCurrentLevel(this);
+    this.levelState = "playing";
+    this.maxWetness = 100;
+    this.wetness = this.maxWetness;
+    this.lowWetnessThreshold = 24;
+    this.dryRate = 2.6;
+    this.scuttleFrameDuration = 110;
+    this.facingDirection = 1;
+    this.blades = [];
+    this.crushers = [];
 
-    this.cameras.main.setBackgroundColor("#10172e");
-    drawSky(this);
-    this.drawLevel(this.currentLevelIndex, this.currentLevel);
+    this.cameras.main.setBackgroundColor("#120d07");
+    drawPyramidInterior(this);
+    this.levelLayout = this.drawLevel(this.currentLevel);
     addSceneTitle(this, `Level ${this.currentLevelIndex + 1}`, this.currentLevel.name);
 
-    this.player = this.add.container(
+    this.ensureCrabTextures();
+
+    this.player = this.physics.add.sprite(
       this.currentLevel.startX,
-      this.currentLevel.startY
+      this.currentLevel.startY,
+      "crab-idle"
     );
-    this.createCrab(this.player);
+    this.player
+      .setOrigin(0.5, 1)
+      .setCollideWorldBounds(true)
+      .setBounce(0)
+      .setDragX(1200)
+      .setMaxVelocity(120, 380)
+      .setDepth(8);
+    this.player.body.setSize(18, 12);
+    this.player.body.setOffset(9, 24);
 
-    this.goalZone = this.add.rectangle(
-      this.currentLevel.riverX + this.currentLevel.riverWidth / 2,
-      this.currentLevel.riverY + this.currentLevel.riverHeight / 2,
-      this.currentLevel.riverWidth - 14,
-      this.currentLevel.riverHeight - 14,
-      COLORS.water,
-      0
+    this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    this.createCollisionWorld(this.levelLayout.solids);
+
+    this.goalZone = this.add.zone(
+      this.currentLevel.goal.x + this.currentLevel.goal.width / 2,
+      this.currentLevel.goal.y + this.currentLevel.goal.height / 2,
+      this.currentLevel.goal.width,
+      this.currentLevel.goal.height
     );
-
-    this.add.text(10, GAME_HEIGHT - 18, "Arrows / WASD to move", {
-      ...LABEL_STYLE,
-      fontSize: "12px"
+    this.physics.add.existing(this.goalZone, true);
+    this.physics.add.overlap(this.player, this.goalZone, () => {
+      this.handleGoalReached();
     });
 
+    this.createWetnessHud();
+    this.updateBlades(this.time.now);
+    this.updateCrushers(this.time.now);
+
+    this.add.text(10, GAME_HEIGHT - 18, "A / D or arrows to scuttle, W / Up / Space to jump", {
+      ...LABEL_STYLE,
+      fontSize: "12px"
+    }).setDepth(20);
+
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.keys = this.input.keyboard.addKeys("W,A,S,D");
+    this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE");
   }
 
-  createCrab(container) {
-    const body = this.add.graphics();
+  ensureCrabTextures() {
+    const textureKeys = ["crab-idle", "crab-scuttle-a", "crab-scuttle-b", "crab-jump"];
 
-    body.fillStyle(COLORS.crab, 1);
-    body.fillEllipse(0, 0, 24, 14);
-    body.fillEllipse(-10, -1, 8, 8);
-    body.fillEllipse(10, -1, 8, 8);
+    if (textureKeys.every((key) => this.textures.exists(key))) {
+      return;
+    }
 
-    body.lineStyle(2, 0x7e2715, 1);
-    body.beginPath();
-    body.moveTo(-5, 2);
-    body.lineTo(-13, 7);
-    body.moveTo(5, 2);
-    body.lineTo(13, 7);
-    body.moveTo(-8, -4);
-    body.lineTo(-13, -9);
-    body.moveTo(8, -4);
-    body.lineTo(13, -9);
-    body.strokePath();
-
-    const eyes = this.add.graphics();
-    eyes.fillStyle(0xffffff, 1);
-    eyes.fillCircle(-4, -8, 2);
-    eyes.fillCircle(4, -8, 2);
-    eyes.fillStyle(0x000000, 1);
-    eyes.fillCircle(-4, -8, 1);
-    eyes.fillCircle(4, -8, 1);
-
-    container.add([body, eyes]);
+    this.generateCrabTexture("crab-idle", "idle");
+    this.generateCrabTexture("crab-scuttle-a", "scuttleA");
+    this.generateCrabTexture("crab-scuttle-b", "scuttleB");
+    this.generateCrabTexture("crab-jump", "jump");
   }
 
-  drawLevel(levelIndex, level) {
-    const graphics = this.add.graphics();
-    const tombX = 20 + levelIndex * 10;
-    const tombY = 170 - levelIndex * 6;
-    const pathY = 188 - levelIndex * 8;
-    const pathWidth = 182 - levelIndex * 12;
-    const ledgeX = 305 - levelIndex * 8;
-    const ledgeY = 172 - levelIndex * 10;
-    const ledgeWidth = 70 + levelIndex * 6;
+  generateCrabTexture(textureKey, pose) {
+    const textureSize = 36;
+    const pixel = 2;
+    const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+    const outline = 0x7e2715;
+    const shell = COLORS.crab;
+    const highlight = 0xf3a08a;
+    const shadow = 0xb6452d;
+    const eyeWhite = 0xfff8de;
+    const pupil = 0x24150c;
+    const drawPixel = (x, y, width, height, color) => {
+      graphics.fillStyle(color, 1);
+      graphics.fillRect(x * pixel, y * pixel, width * pixel, height * pixel);
+    };
 
-    graphics.fillStyle(COLORS.sandLight, 1);
-    graphics.fillRect(0, 150, GAME_WIDTH, 120);
+    const leftLegs =
+      pose === "scuttleA"
+        ? [
+            { x: 2, y: 11, width: 3, height: 1 },
+            { x: 1, y: 13, width: 4, height: 1 }
+          ]
+        : pose === "scuttleB"
+          ? [
+              { x: 1, y: 10, width: 4, height: 1 },
+              { x: 2, y: 13, width: 3, height: 1 }
+            ]
+          : pose === "jump"
+            ? [{ x: 4, y: 12, width: 2, height: 1 }]
+            : [
+                { x: 2, y: 11, width: 3, height: 1 },
+                { x: 2, y: 13, width: 3, height: 1 }
+              ];
+    const rightLegs =
+      pose === "scuttleA"
+        ? [
+            { x: 13, y: 10, width: 4, height: 1 },
+            { x: 13, y: 13, width: 3, height: 1 }
+          ]
+        : pose === "scuttleB"
+          ? [
+              { x: 13, y: 11, width: 3, height: 1 },
+              { x: 12, y: 13, width: 4, height: 1 }
+            ]
+          : pose === "jump"
+            ? [{ x: 12, y: 12, width: 2, height: 1 }]
+            : [
+                { x: 13, y: 11, width: 3, height: 1 },
+                { x: 13, y: 13, width: 3, height: 1 }
+              ];
+    const claws =
+      pose === "jump"
+        ? [
+            { x: 2, y: 5, width: 2, height: 2 },
+            { x: 14, y: 5, width: 2, height: 2 }
+          ]
+        : pose === "scuttleA"
+          ? [
+              { x: 1, y: 7, width: 2, height: 2 },
+              { x: 14, y: 5, width: 2, height: 2 }
+            ]
+          : pose === "scuttleB"
+            ? [
+                { x: 2, y: 5, width: 2, height: 2 },
+                { x: 15, y: 7, width: 2, height: 2 }
+              ]
+            : [
+                { x: 2, y: 6, width: 2, height: 2 },
+                { x: 14, y: 6, width: 2, height: 2 }
+              ];
+
+    [...leftLegs, ...rightLegs].forEach((leg) => {
+      drawPixel(leg.x, leg.y, leg.width, leg.height, outline);
+    });
+    claws.forEach((claw) => {
+      drawPixel(claw.x, claw.y, claw.width, claw.height, outline);
+    });
+
+    drawPixel(4, 6, 10, 1, outline);
+    drawPixel(3, 7, 12, 4, outline);
+    drawPixel(4, 11, 10, 1, outline);
+    drawPixel(5, 5, 8, 1, outline);
+
+    drawPixel(5, 6, 8, 1, shell);
+    drawPixel(4, 7, 10, 3, shell);
+    drawPixel(5, 10, 8, 1, shell);
+    drawPixel(6, 5, 6, 1, shell);
+
+    drawPixel(6, 6, 5, 1, highlight);
+    drawPixel(5, 8, 2, 1, shadow);
+    drawPixel(11, 8, 2, 1, shadow);
+    drawPixel(7, 11, 1, 1, shadow);
+    drawPixel(10, 11, 1, 1, shadow);
+
+    drawPixel(6, 4, 1, 2, outline);
+    drawPixel(10, 4, 1, 2, outline);
+    drawPixel(6, 3, 2, 1, eyeWhite);
+    drawPixel(10, 3, 2, 1, eyeWhite);
+    drawPixel(7, 3, 1, 1, pupil);
+    drawPixel(10, 3, 1, 1, pupil);
+
+    if (pose !== "jump") {
+      drawPixel(7, 12, 1, 1, outline);
+      drawPixel(10, 12, 1, 1, outline);
+    }
+
+    graphics.generateTexture(textureKey, textureSize, textureSize);
+    graphics.destroy();
+  }
+
+  drawLevel(level) {
+    const graphics = this.add.graphics().setDepth(2);
+
+    graphics.fillStyle(COLORS.wallDark, 0.18);
+
+    for (let panelIndex = 0; panelIndex < 5; panelIndex += 1) {
+      const panelX = 34 + panelIndex * 88;
+
+      graphics.fillRoundedRect(panelX, 78, 56, 100, 8);
+    }
+
+    graphics.lineStyle(2, COLORS.wallLight, 0.24);
+
+    for (let y = 90; y <= 198; y += 36) {
+      graphics.lineBetween(26, y, 454, y);
+    }
+
+    this.drawGoalArt(graphics, level.goal);
+
+    (level.lavaPools || []).forEach((pool) => {
+      this.drawLavaPool(graphics, pool);
+    });
+
+    level.solids.forEach((solid) => {
+      this.drawSolidRect(graphics, solid);
+    });
+
+    (level.spikes || []).forEach((spikeStrip) => {
+      this.drawSpikeStrip(graphics, spikeStrip);
+    });
+
+    (level.blades || []).forEach((blade) => {
+      this.createBlade(blade);
+    });
+
+    (level.crushers || []).forEach((crusher) => {
+      this.createCrusher(crusher);
+    });
+
+    this.add
+      .text(46, 120, "START", {
+        fontFamily: "Verdana",
+        fontSize: "10px",
+        color: "#d8c39b"
+      })
+      .setDepth(10);
+
+    return level;
+  }
+
+  drawGoalArt(graphics, goal) {
+    if (goal.kind === "river") {
+      graphics.fillStyle(COLORS.waterDeep, 1);
+      graphics.fillRoundedRect(goal.x, goal.y, goal.width, goal.height, 10);
+      graphics.fillStyle(COLORS.water, 1);
+      graphics.fillRoundedRect(goal.x + 6, goal.y + 6, goal.width - 12, goal.height - 12, 8);
+      graphics.lineStyle(2, COLORS.gold, 0.95);
+      graphics.strokeRoundedRect(goal.x - 4, goal.y - 4, goal.width + 8, goal.height + 8, 12);
+
+      this.add
+        .text(goal.x + goal.width / 2, goal.y + 12, goal.label, {
+          fontFamily: "Verdana",
+          fontSize: "11px",
+          color: COLORS.white
+        })
+        .setOrigin(0.5, 0)
+        .setDepth(10);
+
+      return;
+    }
 
     graphics.fillStyle(COLORS.stone, 1);
-    graphics.fillRect(tombX, tombY, 92, 56);
-    graphics.fillRect(tombX - 8, tombY + 56, 112, 12);
-
-    graphics.fillStyle(COLORS.sandMid, 1);
-    graphics.fillRect(120, pathY, pathWidth, 26);
-    graphics.fillRect(ledgeX, ledgeY, ledgeWidth, 18);
-
+    graphics.fillRect(goal.x - 14, goal.y - 18, 14, goal.height + 52);
+    graphics.fillRect(goal.x + goal.width, goal.y - 18, 14, goal.height + 52);
+    graphics.fillRect(goal.x - 14, goal.y - 18, goal.width + 28, 18);
+    graphics.fillStyle(COLORS.skyTop, 1);
+    graphics.fillRoundedRect(goal.x, goal.y, goal.width, goal.height, 8);
     graphics.fillStyle(COLORS.waterDeep, 1);
-    graphics.fillRect(level.riverX, level.riverY, level.riverWidth, level.riverHeight);
+    graphics.fillRect(goal.x, goal.y + goal.height - 26, goal.width, 26);
     graphics.fillStyle(COLORS.water, 1);
-    graphics.fillRect(
-      level.riverX + 8,
-      level.riverY,
-      level.riverWidth - 8,
-      level.riverHeight
-    );
-
-    // A few stones help each level read differently without adding real collision logic.
-    graphics.fillStyle(0x8f744f, 1);
-
-    for (let stoneIndex = 0; stoneIndex < 4; stoneIndex += 1) {
-      const stoneX = 160 + stoneIndex * 38 + levelIndex * 4;
-      const stoneY = 220 - ((stoneIndex + levelIndex) % 2) * 22 - levelIndex * 2;
-      const stoneRadius = 6 + ((stoneIndex + levelIndex) % 3);
-
-      graphics.fillCircle(stoneX, stoneY, stoneRadius);
-    }
+    graphics.fillRect(goal.x + 4, goal.y + goal.height - 24, goal.width - 8, 20);
+    graphics.fillStyle(0x8d6c46, 1);
+    graphics.fillRect(goal.x - 22, goal.y + 40, 10, 62);
+    graphics.lineStyle(2, COLORS.bronzeDark, 1);
+    graphics.strokeRect(goal.x - 22, goal.y + 40, 10, 62);
 
     this.add
-      .text(tombX + 38, tombY + 16, "TOMB", {
+      .text(goal.x + goal.width / 2, goal.y - 12, goal.label, {
         fontFamily: "Verdana",
-        fontSize: "12px",
-        color: COLORS.white
+        fontSize: "11px",
+        color: COLORS.gold
       })
-      .setOrigin(0.5);
-
-    this.add
-      .text(level.riverX + level.riverWidth / 2, level.riverY + 12, "NILE", {
-        fontFamily: "Verdana",
-        fontSize: "12px",
-        color: COLORS.white
-      })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(10);
   }
 
-  update() {
-    const speed = 1.6;
-    let moveX = 0;
-    let moveY = 0;
+  drawSolidRect(graphics, rect) {
+    if (rect.style === "warmSand") {
+      graphics.fillStyle(COLORS.sandDark, 1);
+      graphics.fillRect(rect.x, rect.y + rect.height - 4, rect.width, 4);
+      graphics.fillStyle(COLORS.sandMid, 1);
+      graphics.fillRect(rect.x, rect.y, rect.width, rect.height - 4);
+      graphics.fillStyle(COLORS.sandLight, 0.8);
 
-    if (this.cursors.left.isDown || this.keys.A.isDown) {
-      moveX -= speed;
-    }
-    if (this.cursors.right.isDown || this.keys.D.isDown) {
-      moveX += speed;
-    }
-    if (this.cursors.up.isDown || this.keys.W.isDown) {
-      moveY -= speed;
-    }
-    if (this.cursors.down.isDown || this.keys.S.isDown) {
-      moveY += speed;
+      for (let offset = 8; offset < rect.width - 4; offset += 18) {
+        graphics.fillEllipse(rect.x + offset, rect.y + 6 + (offset % 24) / 8, 10, 4);
+      }
+
+      graphics.lineStyle(2, COLORS.bronzeDark, 0.45);
+      graphics.strokeRect(rect.x, rect.y, rect.width, rect.height);
+
+      return;
     }
 
-    this.player.x = Phaser.Math.Clamp(this.player.x + moveX, 14, GAME_WIDTH - 14);
-    this.player.y = Phaser.Math.Clamp(this.player.y + moveY, 88, GAME_HEIGHT - 12);
+    graphics.fillStyle(COLORS.stone, 1);
+    graphics.fillRect(rect.x, rect.y, rect.width, rect.height);
+    graphics.fillStyle(COLORS.wallLight, 0.16);
+    graphics.fillRect(rect.x + 3, rect.y + 3, rect.width - 6, Math.max(4, rect.height / 2));
+    graphics.lineStyle(2, COLORS.wallDark, 0.6);
+    graphics.strokeRect(rect.x, rect.y, rect.width, rect.height);
 
-    const reachedGoal = Phaser.Geom.Rectangle.Contains(
-      this.goalZone.getBounds(),
-      this.player.x,
-      this.player.y
+    if (rect.style === "pillar") {
+      graphics.lineStyle(1, COLORS.wallLight, 0.35);
+      graphics.lineBetween(rect.x + rect.width / 2, rect.y + 6, rect.x + rect.width / 2, rect.y + rect.height - 6);
+      return;
+    }
+
+    if (rect.style === "safe") {
+      graphics.fillStyle(COLORS.bronzeDark, 0.85);
+      graphics.fillRect(rect.x + 6, rect.y + 2, rect.width - 12, 4);
+      graphics.fillStyle(COLORS.bronze, 1);
+
+      for (let socketX = rect.x + 10; socketX < rect.x + rect.width - 8; socketX += 16) {
+        graphics.fillRect(socketX, rect.y - 2, 8, 4);
+      }
+    }
+  }
+
+  drawSpikeStrip(graphics, spikeStrip) {
+    const spikeHeight = 14;
+
+    graphics.fillStyle(COLORS.bronzeDark, 1);
+    graphics.fillRect(spikeStrip.x, spikeStrip.y - 4, spikeStrip.width, 4);
+
+    for (let spikeX = spikeStrip.x; spikeX < spikeStrip.x + spikeStrip.width; spikeX += 12) {
+      graphics.fillStyle(COLORS.bronze, 1);
+      graphics.fillTriangle(
+        spikeX,
+        spikeStrip.y - 4,
+        spikeX + 6,
+        spikeStrip.y - spikeHeight,
+        spikeX + 12,
+        spikeStrip.y - 4
+      );
+      graphics.lineStyle(1, COLORS.bronzeDark, 0.65);
+      graphics.strokeTriangle(
+        spikeX,
+        spikeStrip.y - 4,
+        spikeX + 6,
+        spikeStrip.y - spikeHeight,
+        spikeX + 12,
+        spikeStrip.y - 4
+      );
+    }
+  }
+
+  drawLavaPool(graphics, pool) {
+    graphics.fillStyle(COLORS.wallDark, 1);
+    graphics.fillRect(pool.x - 4, pool.y, pool.width + 8, pool.height);
+    graphics.fillStyle(COLORS.lava, 1);
+    graphics.fillRect(pool.x, pool.y, pool.width, pool.height);
+    graphics.fillStyle(COLORS.lavaBright, 1);
+
+    for (let bubbleX = pool.x + 8; bubbleX < pool.x + pool.width - 4; bubbleX += 16) {
+      graphics.fillEllipse(
+        bubbleX,
+        pool.y + 8 + ((bubbleX - pool.x) % 12),
+        10,
+        4
+      );
+      graphics.fillEllipse(
+        bubbleX + 4,
+        pool.y + 22 + ((bubbleX - pool.x) % 10),
+        8,
+        3
+      );
+    }
+  }
+
+  createBlade(bladeConfig) {
+    const blade = this.add.graphics().setDepth(7);
+    const bladeColor = bladeConfig.broken ? 0x8e7865 : COLORS.metal;
+    const outline = bladeConfig.broken ? 0x5b4534 : COLORS.metalDark;
+
+    blade.fillStyle(bladeColor, 1);
+    blade.fillCircle(0, 0, bladeConfig.radius);
+    blade.fillStyle(outline, 1);
+    blade.fillCircle(0, 0, 3);
+    blade.lineStyle(2, outline, 1);
+
+    for (let spoke = 0; spoke < 4; spoke += 1) {
+      const angle = spoke * (Math.PI / 2);
+      blade.lineBetween(
+        Math.cos(angle) * 4,
+        Math.sin(angle) * 4,
+        Math.cos(angle) * (bladeConfig.radius + 2),
+        Math.sin(angle) * (bladeConfig.radius + 2)
+      );
+    }
+
+    if (bladeConfig.broken) {
+      blade.lineStyle(2, COLORS.danger, 1);
+      blade.lineBetween(-bladeConfig.radius + 2, -2, bladeConfig.radius - 2, 4);
+    }
+
+    this.blades.push({
+      ...bladeConfig,
+      display: blade,
+      currentX: bladeConfig.x1,
+      currentY: bladeConfig.y1,
+      angleOffset: bladeConfig.angle || 0
+    });
+  }
+
+  createCrusher(crusherConfig) {
+    const frame = this.add.graphics().setDepth(5);
+
+    frame.fillStyle(COLORS.wallDark, 1);
+    frame.fillRect(crusherConfig.x - crusherConfig.width / 2 - 6, crusherConfig.topY - 8, 6, crusherConfig.drop + crusherConfig.height + 12);
+    frame.fillRect(crusherConfig.x + crusherConfig.width / 2, crusherConfig.topY - 8, 6, crusherConfig.drop + crusherConfig.height + 12);
+    frame.fillRect(crusherConfig.x - crusherConfig.width / 2 - 6, crusherConfig.topY - 8, crusherConfig.width + 12, 8);
+
+    const head = this.add
+      .rectangle(
+        crusherConfig.x,
+        crusherConfig.topY + crusherConfig.height / 2,
+        crusherConfig.width,
+        crusherConfig.height,
+        COLORS.stone
+      )
+      .setStrokeStyle(2, COLORS.wallDark)
+      .setDepth(8);
+    const warning = this.add
+      .rectangle(crusherConfig.x, 228, crusherConfig.width - 10, 4, COLORS.danger, crusherConfig.fake ? 0.12 : 0.28)
+      .setDepth(6);
+
+    this.crushers.push({
+      ...crusherConfig,
+      frame,
+      head,
+      warning,
+      active: false,
+      hitRect: new Phaser.Geom.Rectangle(
+        crusherConfig.x - crusherConfig.width / 2,
+        crusherConfig.topY,
+        crusherConfig.width,
+        crusherConfig.height
+      )
+    });
+  }
+
+  createCollisionWorld(solids) {
+    solids.forEach((solid) => {
+      this.createSolidBody(solid.x, solid.y, solid.width, solid.height);
+    });
+  }
+
+  createSolidBody(x, y, width, height) {
+    const solid = this.add.zone(x + width / 2, y + height / 2, width, height);
+    this.physics.add.existing(solid, true);
+    this.physics.add.collider(this.player, solid);
+
+    return solid;
+  }
+
+  createWetnessHud() {
+    this.wetnessFrame = this.add.graphics().setDepth(20);
+    this.wetnessFill = this.add.graphics().setDepth(21);
+
+    this.add
+      .text(12, 14, "WETNESS", {
+        fontFamily: "Verdana",
+        fontSize: "11px",
+        color: COLORS.white
+      })
+      .setDepth(22);
+
+    this.lowWetnessWarning = this.add
+      .text(GAME_WIDTH - 12, 14, "Crab is drying out!", {
+        fontFamily: "Verdana",
+        fontSize: "11px",
+        color: "#ffd27a"
+      })
+      .setOrigin(1, 0)
+      .setDepth(22)
+      .setVisible(false);
+
+    this.updateWetnessHud();
+  }
+
+  updateWetnessHud() {
+    const ratio = Phaser.Math.Clamp(this.wetness / this.maxWetness, 0, 1);
+    const barX = 78;
+    const barY = 12;
+    const barWidth = 124;
+    const barHeight = 16;
+    let fillColor = 0x5bc0eb;
+
+    if (ratio <= 0.24) {
+      fillColor = 0xff8d58;
+    } else if (ratio <= 0.5) {
+      fillColor = COLORS.gold;
+    }
+
+    this.wetnessFrame.clear();
+    this.wetnessFrame.fillStyle(0x2c170b, 0.85);
+    this.wetnessFrame.fillRoundedRect(barX, barY, barWidth, barHeight, 6);
+    this.wetnessFrame.lineStyle(2, COLORS.gold, 1);
+    this.wetnessFrame.strokeRoundedRect(barX, barY, barWidth, barHeight, 6);
+
+    this.wetnessFill.clear();
+
+    if (ratio > 0) {
+      this.wetnessFill.fillStyle(fillColor, 1);
+      this.wetnessFill.fillRect(barX + 4, barY + 4, Math.floor((barWidth - 8) * ratio), barHeight - 8);
+    }
+
+    const warningVisible = this.levelState === "playing" && this.wetness <= this.lowWetnessThreshold;
+
+    this.lowWetnessWarning.setVisible(
+      warningVisible ||
+        this.levelState === "dry" ||
+        this.levelState === "dead"
     );
 
-    if (reachedGoal) {
-      this.scene.start("WinScene");
+    if (warningVisible) {
+      this.lowWetnessWarning.setAlpha(0.45 + Math.abs(Math.sin(this.time.now / 140)) * 0.55);
+      this.lowWetnessWarning.setColor("#ffd27a");
+      this.lowWetnessWarning.setText("Crab is drying out!");
+    }
+  }
+
+  handleGoalReached() {
+    if (this.levelState !== "playing") {
+      return;
+    }
+
+    this.levelState = "won";
+    this.scene.start("WinScene");
+  }
+
+  handleHazardDeath(message) {
+    if (this.levelState !== "playing") {
+      return;
+    }
+
+    this.levelState = "dead";
+    this.physics.world.pause();
+    this.player.setVelocity(0, 0);
+    this.player.setTint(0xffd27a);
+    this.player.setTexture("crab-jump");
+    this.lowWetnessWarning
+      .setVisible(true)
+      .setAlpha(1)
+      .setColor("#ff9f7a")
+      .setText(message);
+    this.updateWetnessHud();
+
+    this.time.delayedCall(700, () => {
+      this.scene.restart();
+    });
+  }
+
+  handleDryOut() {
+    if (this.levelState !== "playing") {
+      return;
+    }
+
+    this.levelState = "dry";
+    this.physics.world.pause();
+    this.player.setVelocity(0, 0);
+    this.player.setTint(0xf2b661);
+    this.lowWetnessWarning
+      .setVisible(true)
+      .setAlpha(1)
+      .setColor("#ff9f7a")
+      .setText("Too dry! Restarting...");
+    this.updateWetnessHud();
+
+    this.time.delayedCall(700, () => {
+      this.scene.restart();
+    });
+  }
+
+  updatePlayerMovement() {
+    const moveLeft = this.cursors.left.isDown || this.keys.A.isDown;
+    const moveRight = this.cursors.right.isDown || this.keys.D.isDown;
+    const jumpPressed =
+      Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
+      Phaser.Input.Keyboard.JustDown(this.keys.W) ||
+      Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
+    const onGround = this.player.body.blocked.down || this.player.body.touching.down;
+
+    if (moveLeft === moveRight) {
+      this.player.setVelocityX(0);
+    } else if (moveLeft) {
+      this.player.setVelocityX(-110);
+      this.facingDirection = -1;
+    } else {
+      this.player.setVelocityX(110);
+      this.facingDirection = 1;
+    }
+
+    if (jumpPressed && onGround) {
+      this.player.setVelocityY(-320);
+    }
+
+    this.player.setFlipX(this.facingDirection < 0);
+  }
+
+  updatePlayerAnimation(time) {
+    const onGround = this.player.body.blocked.down || this.player.body.touching.down;
+    const horizontalSpeed = Math.abs(this.player.body.velocity.x);
+    let nextTexture = "crab-idle";
+
+    if (!onGround) {
+      nextTexture = "crab-jump";
+      this.player.setAngle(this.player.body.velocity.y < 0 ? -5 : 5);
+    } else if (horizontalSpeed > 5) {
+      nextTexture =
+        Math.floor(time / this.scuttleFrameDuration) % 2 === 0
+          ? "crab-scuttle-a"
+          : "crab-scuttle-b";
+      this.player.setAngle(Math.sin(time / 90) * 2);
+    } else {
+      this.player.setAngle(0);
+    }
+
+    if (this.player.texture.key !== nextTexture) {
+      this.player.setTexture(nextTexture);
+    }
+  }
+
+  updateBlades(time) {
+    this.blades.forEach((blade) => {
+      let travel = 0.5;
+
+      if (!blade.broken) {
+        travel =
+          0.5 +
+          0.5 *
+            Math.sin(((time + blade.phase) / blade.duration) * Math.PI * 2);
+      }
+
+      blade.currentX = Phaser.Math.Linear(blade.x1, blade.x2, travel);
+      blade.currentY = Phaser.Math.Linear(blade.y1, blade.y2, travel);
+      blade.display.setPosition(blade.currentX, blade.currentY);
+      blade.display.setAngle(
+        blade.broken
+          ? blade.angleOffset + Math.sin(time / 180) * 4
+          : blade.angleOffset + time / 4
+      );
+    });
+  }
+
+  getCrusherDropProgress(cycle) {
+    if (cycle < 0.16) {
+      return Phaser.Math.Easing.Cubic.Out(cycle / 0.16);
+    }
+
+    if (cycle < 0.32) {
+      return 1;
+    }
+
+    if (cycle < 0.58) {
+      return 1 - Phaser.Math.Easing.Cubic.InOut((cycle - 0.32) / 0.26);
+    }
+
+    return 0;
+  }
+
+  updateCrushers(time) {
+    this.crushers.forEach((crusher) => {
+      if (crusher.fake) {
+        const fakeY =
+          crusher.topY + crusher.height / 2 + Math.sin(time / 220) * 1.5;
+
+        crusher.head.setY(fakeY);
+        crusher.warning.setAlpha(0.12);
+        crusher.active = false;
+        crusher.hitRect.setTo(
+          crusher.x - crusher.width / 2,
+          fakeY - crusher.height / 2,
+          crusher.width,
+          crusher.height
+        );
+        return;
+      }
+
+      const cycle = ((time + crusher.phase) % crusher.period) / crusher.period;
+      const progress = this.getCrusherDropProgress(cycle);
+      const headY = crusher.topY + crusher.height / 2 + crusher.drop * progress;
+
+      crusher.head.setY(headY);
+      crusher.warning.setAlpha(0.18 + progress * 0.68);
+      crusher.active = progress > 0.72;
+      crusher.hitRect.setTo(
+        crusher.x - crusher.width / 2 + 3,
+        headY - crusher.height / 2,
+        crusher.width - 6,
+        crusher.height + 8
+      );
+    });
+  }
+
+  getPlayerHitbox() {
+    const { x, y, width, height } = this.player.body;
+
+    return new Phaser.Geom.Rectangle(x + 2, y + 2, width - 4, height - 2);
+  }
+
+  circleIntersectsRect(circleX, circleY, radius, rect) {
+    const closestX = Phaser.Math.Clamp(circleX, rect.x, rect.right);
+    const closestY = Phaser.Math.Clamp(circleY, rect.y, rect.bottom);
+    const distanceX = circleX - closestX;
+    const distanceY = circleY - closestY;
+
+    return distanceX * distanceX + distanceY * distanceY <= radius * radius;
+  }
+
+  checkHazards() {
+    const hitbox = this.getPlayerHitbox();
+
+    if (hitbox.bottom >= GAME_HEIGHT - 4) {
+      this.handleHazardDeath("Lost in the chamber! Restarting...");
+      return;
+    }
+
+    for (const spikeStrip of this.currentLevel.spikes || []) {
+      const spikeHitbox = new Phaser.Geom.Rectangle(
+        spikeStrip.x,
+        spikeStrip.y - 16,
+        spikeStrip.width,
+        16
+      );
+
+      if (Phaser.Geom.Intersects.RectangleToRectangle(hitbox, spikeHitbox)) {
+        this.handleHazardDeath("Bronze spikes! Restarting...");
+        return;
+      }
+    }
+
+    for (const lavaPool of this.currentLevel.lavaPools || []) {
+      const lavaHitbox = new Phaser.Geom.Rectangle(
+        lavaPool.x,
+        lavaPool.y,
+        lavaPool.width,
+        lavaPool.height
+      );
+
+      if (Phaser.Geom.Intersects.RectangleToRectangle(hitbox, lavaHitbox)) {
+        this.handleHazardDeath("Too hot! Restarting...");
+        return;
+      }
+    }
+
+    for (const blade of this.blades) {
+      if (
+        !blade.broken &&
+        this.circleIntersectsRect(
+          blade.currentX,
+          blade.currentY,
+          blade.radius - 1,
+          hitbox
+        )
+      ) {
+        this.handleHazardDeath("Sliced by blades! Restarting...");
+        return;
+      }
+    }
+
+    for (const crusher of this.crushers) {
+      if (
+        crusher.active &&
+        Phaser.Geom.Intersects.RectangleToRectangle(hitbox, crusher.hitRect)
+      ) {
+        this.handleHazardDeath("Flattened! Restarting...");
+        return;
+      }
+    }
+  }
+
+  update(_, delta) {
+    if (this.levelState !== "playing") {
+      return;
+    }
+
+    this.updatePlayerMovement();
+    this.updatePlayerAnimation(this.time.now);
+    this.updateBlades(this.time.now);
+    this.updateCrushers(this.time.now);
+    this.checkHazards();
+
+    if (this.levelState !== "playing") {
+      return;
+    }
+
+    this.wetness = Math.max(0, this.wetness - (this.dryRate * delta) / 1000);
+    this.updateWetnessHud();
+
+    if (this.wetness <= 0) {
+      this.handleDryOut();
     }
   }
 }
@@ -1002,6 +1710,13 @@ const config = {
   pixelArt: true,
   roundPixels: true,
   antialias: false,
+  physics: {
+    default: "arcade",
+    arcade: {
+      gravity: { y: 820 },
+      debug: false
+    }
+  },
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
