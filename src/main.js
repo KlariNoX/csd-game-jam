@@ -9,6 +9,7 @@ const LEVEL_SELECT_BACKGROUND_KEY = "level-select-background";
 const CRAB_SPRITESHEET_KEY = "crab-sheet";
 const CRAB_FRAME_SIZE = 32;
 const CRAB_IDLE_FRAME = 0;
+const CRAB_MENU_IDLE_FRAMES = [0, 1, 2, 1];
 const CRAB_SCUTTLE_FRAMES = [0, 1, 2, 3];
 const CRAB_JUMP_FRAME = 13;
 const MAIN_MENU_BACKGROUND_URL = new URL(
@@ -183,31 +184,46 @@ const LEVELS = [
 ];
 
 const LEVEL_NODE_POSITIONS = [
-  { x: 228, y: 74 },
-  { x: 286, y: 102 },
-  { x: 196, y: 134 },
-  { x: 142, y: 166 },
-  { x: 98, y: 198 }
+  { x: 226, y: 84 },
+  { x: 296, y: 114 },
+  { x: 130, y: 150 },
+  { x: 356, y: 181 },
+  { x: 226, y: 221 }
+];
+
+const LEVEL_LABEL_OFFSETS = [
+  { x: 0, y: 25 },
+  { x: 0, y: 25 },
+  { x: 34, y: 0 },
+  { x: 0, y: 25 },
+  { x: 0, y: -25 }
 ];
 
 const LEVEL_ROUTE_POINTS = [
   LEVEL_NODE_POSITIONS[0],
-  { x: 258, y: 88 },
+  { x: 226, y: 98 },
+  { x: 252, y: 112 },
   LEVEL_NODE_POSITIONS[1],
-  { x: 252, y: 116 },
-  { x: 224, y: 126 },
+  { x: 270, y: 128 },
+  { x: 236, y: 132 },
+  { x: 198, y: 144 },
   LEVEL_NODE_POSITIONS[2],
-  { x: 170, y: 150 },
+  { x: 166, y: 160 },
+  { x: 206, y: 160 },
+  { x: 242, y: 174 },
+  { x: 300, y: 181 },
   LEVEL_NODE_POSITIONS[3],
-  { x: 118, y: 182 },
+  { x: 334, y: 196 },
+  { x: 292, y: 198 },
+  { x: 250, y: 210 },
   LEVEL_NODE_POSITIONS[4],
-  { x: 170, y: 208 },
-  { x: 260, y: 214 },
-  { x: 324, y: 220 }
+  { x: 256, y: 220 },
+  { x: 314, y: 210 },
+  { x: 372, y: 210 }
 ];
 
-const LEVEL_ROUTE_ACTIVE_SEGMENT_COUNTS = [0, 2, 5, 7, 13];
-const EXIT_POINT = { x: 376, y: 224 };
+const LEVEL_ROUTE_ACTIVE_SEGMENT_COUNTS = [0, 3, 7, 12, 20];
+const EXIT_POINT = { x: 430, y: 222 };
 
 const sharedState = {
   musicOn: true,
@@ -352,6 +368,12 @@ function playSoundCue(scene, cue) {
 
 function clampLevelIndex(levelIndex) {
   return Phaser.Math.Clamp(levelIndex, 0, TOTAL_LEVELS - 1);
+}
+
+function getRomanNumeral(value) {
+  const numerals = ["I", "II", "III", "IV", "V"];
+
+  return numerals[value - 1] || String(value);
 }
 
 function loadProgressFromStorage() {
@@ -633,7 +655,7 @@ function createTextButton(scene, x, y, label, onClick, width = 140) {
   return button;
 }
 
-function addSceneTitle(scene, title, subtitle = "") {
+function addSceneTitle(scene, title, subtitle = "", subtitleY = 62) {
   scene.add
     .text(GAME_WIDTH / 2, 36, title, {
       fontFamily: FONTS.title,
@@ -647,7 +669,7 @@ function addSceneTitle(scene, title, subtitle = "") {
 
   if (subtitle) {
     scene.add
-      .text(GAME_WIDTH / 2, 62, subtitle, {
+      .text(GAME_WIDTH / 2, subtitleY, subtitle, {
         ...LABEL_STYLE,
         fontSize: "12px"
       })
@@ -677,6 +699,54 @@ function addCrtOverlay(scene) {
 function preloadImageIfNeeded(scene, key, url) {
   if (!scene.textures.exists(key)) {
     scene.load.image(key, url);
+  }
+}
+
+function preloadCrabSpritesheetIfNeeded(scene) {
+  if (!scene.textures.exists(CRAB_SPRITESHEET_KEY)) {
+    scene.load.spritesheet(CRAB_SPRITESHEET_KEY, CRAB_SPRITESHEET_URL, {
+      frameWidth: CRAB_FRAME_SIZE,
+      frameHeight: CRAB_FRAME_SIZE
+    });
+  }
+}
+
+function ensureCrabAnimations(scene) {
+  if (!scene.anims.exists("crab-idle")) {
+    scene.anims.create({
+      key: "crab-idle",
+      frames: [{ key: CRAB_SPRITESHEET_KEY, frame: CRAB_IDLE_FRAME }],
+      frameRate: 1,
+      repeat: -1
+    });
+  }
+  if (!scene.anims.exists("crab-menu-idle")) {
+    scene.anims.create({
+      key: "crab-menu-idle",
+      frames: scene.anims.generateFrameNumbers(CRAB_SPRITESHEET_KEY, {
+        frames: CRAB_MENU_IDLE_FRAMES
+      }),
+      frameRate: 4,
+      repeat: -1
+    });
+  }
+  if (!scene.anims.exists("crab-scuttle")) {
+    scene.anims.create({
+      key: "crab-scuttle",
+      frames: scene.anims.generateFrameNumbers(CRAB_SPRITESHEET_KEY, {
+        frames: CRAB_SCUTTLE_FRAMES
+      }),
+      frameRate: 9,
+      repeat: -1
+    });
+  }
+  if (!scene.anims.exists("crab-jump")) {
+    scene.anims.create({
+      key: "crab-jump",
+      frames: [{ key: CRAB_SPRITESHEET_KEY, frame: CRAB_JUMP_FRAME }],
+      frameRate: 1,
+      repeat: -1
+    });
   }
 }
 
@@ -790,9 +860,9 @@ function createLevelNode(scene, x, y, levelIndex, unlocked, onSelect) {
 
   if (unlocked) {
     const label = scene.add
-      .text(0, 0, String(levelIndex + 1), {
+      .text(0, 0, getRomanNumeral(levelIndex + 1), {
         fontFamily: FONTS.ui,
-        fontSize: "12px",
+        fontSize: levelIndex >= 2 ? "10px" : "12px",
         color: "#2c170b"
       })
       .setOrigin(0.5);
@@ -803,10 +873,13 @@ function createLevelNode(scene, x, y, levelIndex, unlocked, onSelect) {
   }
 
   if (unlocked) {
-    node.setSize(32, 32);
-    node.setInteractive(new Phaser.Geom.Circle(0, 0, 16), Phaser.Geom.Circle.Contains);
+    const hitZone = scene.add
+      .zone(x, y, 46, 46)
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(13);
 
-    node
+    hitZone
       .on("pointerover", () => {
         node.setScale(1.08);
       })
@@ -828,34 +901,67 @@ class MainMenuScene extends Phaser.Scene {
 
   preload() {
     preloadImageIfNeeded(this, MAIN_MENU_BACKGROUND_KEY, MAIN_MENU_BACKGROUND_URL);
+    preloadCrabSpritesheetIfNeeded(this);
   }
 
   create() {
     ensureProgress(this);
     addMenuBackground(this);
-    createPanel(this, 118, 78, 244, 150);
+    ensureCrabAnimations(this);
+    createPanel(this, 26, 82, 218, 146);
 
-    addSceneTitle(this, "Crab Out of Nile", "Tiny jam build");
+    this.add
+      .text(36, 42, "Crab Out of Nile", {
+        fontFamily: FONTS.title,
+        fontSize: "27px",
+        color: COLORS.gold,
+        stroke: "#2c170b",
+        strokeThickness: 6
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(30);
+
+    this.add
+      .text(40, 68, "Tiny jam build", {
+        ...LABEL_STYLE,
+        fontSize: "12px"
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(30);
 
     this.add
       .text(
-        GAME_WIDTH / 2,
-        110,
+        135,
+        112,
         "A crab escaped the tomb.\nNow it wants the Nile.",
         {
           ...LABEL_STYLE,
-          align: "center"
+          align: "center",
+          wordWrap: { width: 182 }
         }
       )
       .setOrigin(0.5);
 
-    createTextButton(this, GAME_WIDTH / 2, 160, "Play", () => {
+    createTextButton(this, 135, 158, "Play", () => {
       this.scene.start("LevelSelectScene");
     });
 
-    createTextButton(this, GAME_WIDTH / 2, 204, "Settings", () => {
+    createTextButton(this, 135, 202, "Settings", () => {
       this.scene.start("SettingsScene");
     });
+
+    const crab = this.add
+      .sprite(334, 208, CRAB_SPRITESHEET_KEY, CRAB_IDLE_FRAME)
+      .setOrigin(0.5, 1)
+      .setScale(2)
+      .setFlipX(true)
+      .setDepth(9);
+
+    crab.anims.play("crab-menu-idle");
+
+    this.add
+      .ellipse(334, 212, 58, 10, 0x160d08, 0.34)
+      .setDepth(8);
 
     addCrtOverlay(this);
   }
@@ -866,9 +972,12 @@ class SettingsScene extends Phaser.Scene {
     super("SettingsScene");
   }
 
+  preload() {
+    preloadImageIfNeeded(this, MAIN_MENU_BACKGROUND_KEY, MAIN_MENU_BACKGROUND_URL);
+  }
+
   create() {
-    drawSky(this);
-    drawDesert(this);
+    addMenuBackground(this);
     createPanel(this, 110, 46, 260, 176);
     addSceneTitle(this, "Settings");
 
@@ -938,7 +1047,7 @@ class LevelSelectScene extends Phaser.Scene {
 
     addLevelSelectBackground(this);
     drawLevelSelectExit(this);
-    addSceneTitle(this, "Level Select", "Choose an unlocked chamber");
+    addSceneTitle(this, "Level Select", "Choose an unlocked chamber", 56);
 
     this.add
       .text(76, 22, `Unlocked: ${highestUnlockedLevel}/${TOTAL_LEVELS}`, {
@@ -970,6 +1079,8 @@ class LevelSelectScene extends Phaser.Scene {
     }
 
     LEVEL_NODE_POSITIONS.forEach((nodePosition, levelIndex) => {
+      const labelOffset = LEVEL_LABEL_OFFSETS[levelIndex];
+
       createLevelNode(
         this,
         nodePosition.x,
@@ -983,7 +1094,7 @@ class LevelSelectScene extends Phaser.Scene {
       );
 
       this.add
-        .text(nodePosition.x, nodePosition.y + 24, `L${levelIndex + 1}`, {
+        .text(nodePosition.x + labelOffset.x, nodePosition.y + labelOffset.y, `L${levelIndex + 1}`, {
           fontFamily: FONTS.ui,
           fontSize: "11px",
           color: isLevelUnlocked(this, levelIndex) ? COLORS.white : "#b59a7b"
@@ -991,26 +1102,28 @@ class LevelSelectScene extends Phaser.Scene {
         .setOrigin(0.5);
     });
 
-    createPanel(this, 44, 218, 288, 32);
+    createPanel(this, 16, 232, 190, 28);
 
     this.add
       .text(
-        188,
-        234,
+        111,
+        246,
         clearBannerText || "Gold chambers can be replayed. Dark seals stay locked.",
         {
           fontFamily: FONTS.ui,
           fontSize: "11px",
-          color: clearBannerText ? COLORS.gold : COLORS.white
+          color: clearBannerText ? COLORS.gold : COLORS.white,
+          align: "center",
+          wordWrap: { width: 172, useAdvancedWrap: true }
         }
       )
       .setOrigin(0.5);
 
     this.registry.set("clearBannerText", "");
 
-    createTextButton(this, 404, 234, "Main Menu", () => {
+    createTextButton(this, 408, 24, "Main Menu", () => {
       this.scene.start("MainMenuScene");
-    }, 120);
+    }, 112);
 
     addCrtOverlay(this);
   }
@@ -1102,12 +1215,7 @@ class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    if (!this.textures.exists(CRAB_SPRITESHEET_KEY)) {
-      this.load.spritesheet(CRAB_SPRITESHEET_KEY, CRAB_SPRITESHEET_URL, {
-        frameWidth: CRAB_FRAME_SIZE,
-        frameHeight: CRAB_FRAME_SIZE
-      });
-    }
+    preloadCrabSpritesheetIfNeeded(this);
   }
 
   create() {
@@ -1128,7 +1236,7 @@ class GameScene extends Phaser.Scene {
     this.levelLayout = this.drawLevel(this.currentLevel);
     addSceneTitle(this, `Level ${this.currentLevelIndex + 1}`, this.currentLevel.name);
 
-    this.ensureCrabAnimations();
+    ensureCrabAnimations(this);
 
     this.player = this.physics.add.sprite(
       this.currentLevel.startX,
@@ -1361,35 +1469,6 @@ class GameScene extends Phaser.Scene {
     if (this.levelState === "playing") {
       this.physics.world.resume();
       this.updateWetnessHud();
-    }
-  }
-
-  ensureCrabAnimations() {
-    if (!this.anims.exists("crab-idle")) {
-      this.anims.create({
-        key: "crab-idle",
-        frames: [{ key: CRAB_SPRITESHEET_KEY, frame: CRAB_IDLE_FRAME }],
-        frameRate: 1,
-        repeat: -1
-      });
-    }
-    if (!this.anims.exists("crab-scuttle")) {
-      this.anims.create({
-        key: "crab-scuttle",
-        frames: this.anims.generateFrameNumbers(CRAB_SPRITESHEET_KEY, {
-          frames: CRAB_SCUTTLE_FRAMES
-        }),
-        frameRate: 9,
-        repeat: -1
-      });
-    }
-    if (!this.anims.exists("crab-jump")) {
-      this.anims.create({
-        key: "crab-jump",
-        frames: [{ key: CRAB_SPRITESHEET_KEY, frame: CRAB_JUMP_FRAME }],
-        frameRate: 1,
-        repeat: -1
-      });
     }
   }
 
