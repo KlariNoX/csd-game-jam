@@ -133,7 +133,7 @@ const LEVELS = [
   {
     name: "Moon Shaft",
     report:
-      "Ancient Engineer Report #4:\nThe crusher nearest the Nile never got its counterweight.\nIt is decorative, not deadly.\nEvery other ceiling block is eager to flatten visitors.",
+      "Ancient Engineer Report #4:\n𓂀 𓃭 𓊹 𓇳 𓈖 𓆣 𓋹\n𓉐 𓏏 𓐍 𓄿 𓅓 𓆑 𓂋\n𓁐 𓃀 𓇋 𓌳 𓎛 𓊃 𓊪",
     startX: 36,
     startY: 220,
     goal: { x: 430, y: 160, width: 44, height: 92, kind: "river", label: "NILE" },
@@ -1239,6 +1239,7 @@ class ReportScene extends Phaser.Scene {
     const reportLines = level.report.split("\n");
     reportLines.shift();
     const reportBody = reportLines.join("\n");
+    const hasHieroglyphReport = /[\u{13000}-\u{1342f}]/u.test(reportBody);
 
     drawReportParchment(this);
 
@@ -1262,12 +1263,14 @@ class ReportScene extends Phaser.Scene {
 
     this.add
       .text(GAME_WIDTH / 2, 132, reportBody, {
-        fontFamily: FONTS.title,
-        fontSize: "13px",
+        fontFamily: hasHieroglyphReport
+          ? '"Segoe UI Historic", "Noto Sans Egyptian Hieroglyphs", serif'
+          : FONTS.title,
+        fontSize: hasHieroglyphReport ? "18px" : "13px",
         color: "#3a210d",
         align: "center",
         wordWrap: { width: 308, useAdvancedWrap: true },
-        lineSpacing: 8
+        lineSpacing: hasHieroglyphReport ? 10 : 8
       })
       .setOrigin(0.5);
 
