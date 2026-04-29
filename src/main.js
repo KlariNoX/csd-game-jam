@@ -1398,12 +1398,6 @@ class GameScene extends Phaser.Scene {
 
     graphics.fillStyle(COLORS.wallDark, 0.18);
 
-    for (let panelIndex = 0; panelIndex < 5; panelIndex += 1) {
-      const panelX = 34 + panelIndex * 88;
-
-      graphics.fillRoundedRect(panelX, 78, 56, 100, 8);
-    }
-
     graphics.lineStyle(2, COLORS.wallLight, 0.24);
 
     for (let y = 90; y <= 198; y += 36) {
@@ -1431,14 +1425,6 @@ class GameScene extends Phaser.Scene {
     (level.crushers || []).forEach((crusher) => {
       this.createCrusher(crusher);
     });
-
-    this.add
-      .text(46, 120, "START", {
-        fontFamily: FONTS.ui,
-        fontSize: "10px",
-        color: "#d8c39b"
-      })
-      .setDepth(10);
 
     return level;
   }
