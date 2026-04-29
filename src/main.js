@@ -190,41 +190,93 @@ const LEVELS = [
   {
     name: "Sand Hall",
     report:
-      "Ancient Engineer Report #2:\nTwo blade carriages still spin.\nThe maintenance bay with the broken blade is the only passage I would use.\nPlease do not stand where the ropes still work.",
-    startX: 42,
-    startY: 220,
-    goal: { x: 430, y: 140, width: 34, height: 112, kind: "door", label: "EXIT" },
-    solids: [
-      { x: 0, y: 232, width: 126, height: 38, style: "stone" },
-      { x: 120, y: 206, width: 46, height: 12, style: "stone" },
-      { x: 176, y: 184, width: 86, height: 12, style: "stone" },
-      { x: 266, y: 160, width: 86, height: 12, style: "stone" },
-      { x: 344, y: 232, width: 82, height: 38, style: "stone" }
+      "Ancient Engineer Report #2:\nThe Sand Hall lock listens for two sun seals.\nThe first seal is low and safe. The second waits past the old sand lift.",
+    startX: 36,
+    startY: 193,
+    goal: { x: 430, y: 119, width: 34, height: 83, kind: "door", label: "EXIT" },
+    puzzle: {
+      requiredSwitchCount: 2,
+      switches: [
+        // Low seal introduces the Level 2 objective without pressure.
+        { id: "low-sun-seal", x: 116, y: 180, width: 30, height: 8 },
+        // High seal asks the player to use the moving sand lift and avoid the edge spikes.
+        { id: "high-scarab-seal", x: 300, y: 127, width: 30, height: 8 }
+      ]
+    },
+    decorations: [
+      { type: "sandPit", x: 84, y: 202, width: 76, height: 68 },
+      { type: "sandPit", x: 226, y: 202, width: 88, height: 68 },
+      // A higher false ledge with hanging spikes makes Sand Hall feel layered but stays off-route.
+      { type: "ceilingLedge", x: 36, y: 100, width: 92, height: 12 }
     ],
-    blades: [
-      { x1: 148, y1: 220, x2: 240, y2: 220, radius: 11, duration: 1600, phase: 0, broken: false },
-      { x1: 308, y1: 136, x2: 308, y2: 196, radius: 11, duration: 1800, phase: 450, broken: false },
-      { x1: 220, y1: 160, x2: 220, y2: 160, radius: 12, duration: 1600, phase: 0, broken: true, angle: 18 }
+    solids: [
+      // Sand Hall uses the background floor line at y=202, then custom ruin ledges step upward to the sand lift.
+      { x: 0, y: 202, width: 84, height: 38, style: "backgroundFloor" },
+      { x: 102, y: 187, width: 58, height: 12, style: "ruinLedge" },
+      { x: 182, y: 169, width: 48, height: 12, style: "ruinLedge" },
+      { x: 288, y: 134, width: 64, height: 12, style: "ruinLedge" },
+      { x: 360, y: 164, width: 48, height: 12, style: "ruinLedge" },
+      { x: 420, y: 202, width: 60, height: 38, style: "backgroundFloor" }
+    ],
+    movingPlatforms: [
+      // The sand lift crosses the central pit slowly enough for a beginner to read and ride.
+      { x: 234, y: 169, width: 46, height: 10, fromX: 232, toX: 280, duration: 2600 }
+    ],
+    spikes: [
+      // Short floor clusters mark the gaps without punishing the spawn.
+      { x: 84, y: 202, width: 20 },
+      { x: 160, y: 202, width: 20 },
+      { x: 248, y: 202, width: 28 },
+      { x: 314, y: 202, width: 22 },
+      // This small platform-edge trap adds risk near the second seal while leaving a safe landing zone.
+      { x: 334, y: 134, width: 18 },
+      { x: 52, y: 112, width: 62, direction: "down" }
     ]
   },
   {
-    name: "Scarab Steps",
+    name: "Stone Trial",
     report:
-      "Ancient Engineer Report #3:\nWe ran out of lava in the middle channel.\nThat trench is only warm sand dressed up like a trap.\nStep on the dull one, not the bright ones.",
-    startX: 42,
-    startY: 220,
-    goal: { x: 428, y: 146, width: 34, height: 106, kind: "door", label: "EXIT" },
-    solids: [
-      { x: 0, y: 232, width: 124, height: 38, style: "stone" },
-      { x: 174, y: 206, width: 40, height: 12, style: "stone" },
-      { x: 244, y: 216, width: 86, height: 18, style: "warmSand" },
-      { x: 360, y: 206, width: 42, height: 12, style: "stone" },
-      { x: 398, y: 232, width: 82, height: 38, style: "stone" }
+      "Ancient Engineer Report #3:\nThe temple now tests practical intelligence.\nPush the marked stones onto seals, then use the second block as a step toward the upper scarab.",
+    startX: 36,
+    startY: 193,
+    goal: { x: 430, y: 119, width: 34, height: 83, kind: "door", label: "EXIT" },
+    puzzle: {
+      requiredSwitchCount: 2,
+      switches: [
+        // Box-only seal: the first stone block must be pushed onto this plate.
+        { id: "box-floor-seal", x: 122, y: 194, width: 32, height: 8, activation: "box" },
+        // Upper seal: the second box creates a beginner-friendly step up to this platform.
+        { id: "upper-scarab-seal", x: 314, y: 125, width: 30, height: 8 }
+      ]
+    },
+    decorations: [
+      { type: "sandPit", x: 168, y: 202, width: 28, height: 68 },
+      { type: "sandPit", x: 364, y: 202, width: 34, height: 68 },
+      // The upper broken shelf is visual danger only; it hints at deeper tomb traps.
+      { type: "ceilingLedge", x: 42, y: 92, width: 86, height: 12 }
     ],
-    lavaPools: [
-      { x: 124, y: 232, width: 50, height: 38 },
-      { x: 214, y: 232, width: 30, height: 38 },
-      { x: 330, y: 232, width: 30, height: 38 }
+    solids: [
+      // Two box puzzle yards sit on the background floor, with an upper route unlocked by stacking movement.
+      { x: 0, y: 202, width: 168, height: 38, style: "backgroundFloor" },
+      { x: 196, y: 184, width: 52, height: 12, style: "stone" },
+      { x: 226, y: 202, width: 118, height: 38, style: "backgroundFloor" },
+      { x: 300, y: 132, width: 58, height: 12, style: "ruinLedge" },
+      { x: 356, y: 166, width: 42, height: 12, style: "stone" },
+      { x: 398, y: 202, width: 82, height: 38, style: "backgroundFloor" }
+    ],
+    boxes: [
+      // Plate box: fenced to the left puzzle yard so it cannot be lost behind the spike gap.
+      { id: "plate-box", x: 58, y: 184, width: 20, height: 18, bounds: { minX: 20, maxX: 164 } },
+      // Step box: used as a portable stair to reach the higher scarab seal.
+      { id: "step-box", x: 238, y: 184, width: 20, height: 18, bounds: { minX: 226, maxX: 344 } }
+    ],
+    spikes: [
+      // The first gap is the teaching hazard: cross it with a jump, not by rushing the box.
+      { x: 168, y: 202, width: 28 },
+      // Edge spikes make the upper seal route deliberate while leaving room for the box-step solution.
+      { x: 346, y: 132, width: 12 },
+      { x: 364, y: 202, width: 26 },
+      { x: 58, y: 104, width: 58, direction: "down" }
     ]
   },
   {
@@ -1788,6 +1840,9 @@ class GameScene extends Phaser.Scene {
     this.facingDirection = 1;
     this.blades = [];
     this.crushers = [];
+    this.movingPlatforms = [];
+    this.pushBoxes = [];
+    this.staticSolids = [];
     this.puzzleState = this.createPuzzleState(this.currentLevel);
 
     this.cameras.main.setBackgroundColor("#120d07");
@@ -1816,6 +1871,8 @@ class GameScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
     this.createCollisionWorld(this.levelLayout.solids);
+    this.createMovingPlatforms(this.levelLayout.movingPlatforms || []);
+    this.createPushBoxes(this.levelLayout.boxes || []);
 
     this.goalZone = this.add.zone(
       this.currentLevel.goal.x + this.currentLevel.goal.width / 2,
@@ -1830,6 +1887,8 @@ class GameScene extends Phaser.Scene {
     this.createPuzzleSwitchZones();
 
     this.createWetnessHud();
+    this.updateMovingPlatforms(this.time.now, 16);
+    this.updatePushBoxes();
     this.updateBlades(this.time.now);
     this.updateCrushers(this.time.now);
 
@@ -2090,6 +2149,25 @@ class GameScene extends Phaser.Scene {
   }
 
   drawLevelDecoration(graphics, decoration) {
+    if (decoration.type === "sandPit") {
+      graphics.fillStyle(0x3c2518, 0.72);
+      graphics.fillRect(decoration.x, decoration.y, decoration.width, decoration.height);
+      graphics.fillStyle(COLORS.sandDark, 0.86);
+      graphics.fillRect(decoration.x + 2, decoration.y + 4, decoration.width - 4, decoration.height - 4);
+      graphics.fillStyle(COLORS.sandMid, 0.9);
+
+      for (let sandX = decoration.x + 8; sandX < decoration.x + decoration.width - 4; sandX += 18) {
+        graphics.fillEllipse(
+          sandX,
+          decoration.y + 14 + ((sandX - decoration.x) % 14),
+          12,
+          4
+        );
+      }
+
+      return;
+    }
+
     if (decoration.type === "ceilingLedge") {
       this.drawRuinPlatform(decoration);
 
@@ -2292,6 +2370,7 @@ class GameScene extends Phaser.Scene {
 
     this.puzzleState.switchStates.forEach((switchState, switchIndex) => {
       const { x, y, width, height } = switchState.config;
+      const activation = switchState.config.activation || "player";
       const switchZone = this.add.zone(
         x + width / 2,
         y + height / 2,
@@ -2300,14 +2379,26 @@ class GameScene extends Phaser.Scene {
       );
 
       this.physics.add.existing(switchZone, true);
-      this.physics.add.overlap(this.player, switchZone, () => {
-        this.activatePuzzleSwitch(switchIndex);
-      });
+
+      // Most seals wake when the crab reaches them. Level 3 can mark a seal as
+      // activation: "box" so only a pushed stone box can press it.
+      if (activation === "box") {
+        this.pushBoxes.forEach((boxState) => {
+          this.physics.add.overlap(boxState.bodyObject, switchZone, () => {
+            this.activatePuzzleSwitch(switchIndex, "box");
+          });
+        });
+      } else {
+        this.physics.add.overlap(this.player, switchZone, () => {
+          this.activatePuzzleSwitch(switchIndex, "player");
+        });
+      }
+
       switchState.zone = switchZone;
     });
   }
 
-  activatePuzzleSwitch(switchIndex) {
+  activatePuzzleSwitch(switchIndex, activator = "player") {
     if (this.levelState !== "playing" || !this.puzzleState?.hasPuzzle) {
       return;
     }
@@ -2318,6 +2409,10 @@ class GameScene extends Phaser.Scene {
       return;
     }
 
+    if ((switchState.config.activation || "player") === "box" && activator !== "box") {
+      return;
+    }
+
     switchState.activated = true;
     this.puzzleState.switchesActivated += 1;
     this.drawPuzzleSwitchState(switchIndex);
@@ -2325,12 +2420,12 @@ class GameScene extends Phaser.Scene {
     this.updatePuzzleHud();
     playSoundCue(this, "ui-click");
 
-    // Once the required number of plates is active, the Burial Gate becomes a
-    // normal exit again; until then the exit overlap only gives locked feedback.
+    // Once the required number of plates is active, the door becomes a normal
+    // exit again; until then the exit overlap only gives locked feedback.
     if (this.puzzleState.switchesActivated >= this.puzzleState.requiredSwitchCount) {
       this.puzzleState.unlocked = true;
       this.updateDoorLockVisual();
-      this.showPuzzleMessage("Burial Gate unlocked", "#fff8de");
+      this.showPuzzleMessage(`${this.currentLevel.name} unlocked`, "#fff8de");
       playSoundCue(this, "clear");
       this.cameras.main.flash(160, 255, 238, 176);
       return;
@@ -2581,10 +2676,226 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  createCollisionWorld(solids) {
-    solids.forEach((solid) => {
-      this.createSolidBody(solid.x, solid.y, solid.width, solid.height);
+  createMovingPlatforms(platforms) {
+    platforms.forEach((platformConfig) => {
+      this.createMovingPlatform(platformConfig);
     });
+  }
+
+  createMovingPlatform(platformConfig) {
+    const centerX = platformConfig.x + platformConfig.width / 2;
+    const centerY = platformConfig.y + platformConfig.height / 2;
+    const platformBody = this.add
+      .rectangle(centerX, centerY, platformConfig.width, platformConfig.height, COLORS.sandMid, 0.01)
+      .setDepth(6);
+    const platformArt = this.add.graphics().setDepth(6);
+
+    this.physics.add.existing(platformBody);
+    platformBody.body.setAllowGravity(false);
+    platformBody.body.setImmovable(true);
+    platformBody.body.setSize(platformConfig.width, platformConfig.height);
+    platformBody.body.pushable = false;
+    this.physics.add.collider(this.player, platformBody);
+
+    this.movingPlatforms.push({
+      ...platformConfig,
+      bodyObject: platformBody,
+      art: platformArt,
+      previousX: centerX
+    });
+  }
+
+  drawMovingPlatformArt(movingPlatform) {
+    const { bodyObject, art, width, height } = movingPlatform;
+    const left = bodyObject.x - width / 2;
+    const top = bodyObject.y - height / 2;
+
+    art.clear();
+    art.fillStyle(0x2c170b, 0.78);
+    art.fillRect(left - 2, top + height - 1, width + 4, 6);
+    art.fillStyle(COLORS.sandDark, 1);
+    art.fillRoundedRect(left, top, width, height, 2);
+    art.fillStyle(COLORS.sandLight, 0.9);
+    art.fillRect(left + 3, top + 2, width - 6, 3);
+    art.lineStyle(1, COLORS.bronzeDark, 0.9);
+    art.strokeRoundedRect(left, top, width, height, 2);
+
+    for (let grooveX = left + 10; grooveX < left + width - 4; grooveX += 14) {
+      art.lineBetween(grooveX, top + 2, grooveX - 4, top + height - 2);
+    }
+  }
+
+  updateMovingPlatforms(time, delta) {
+    const safeDelta = Math.max(delta || 16, 1);
+
+    this.movingPlatforms.forEach((movingPlatform) => {
+      const {
+        bodyObject,
+        width,
+        height,
+        y,
+        fromX = movingPlatform.x,
+        toX = movingPlatform.x,
+        duration = 2400,
+        phase = 0
+      } = movingPlatform;
+      const cycle = ((time + phase) % duration) / duration;
+      const travel = 0.5 - Math.cos(cycle * Math.PI * 2) * 0.5;
+      const nextX = Phaser.Math.Linear(fromX + width / 2, toX + width / 2, travel);
+      const nextY = y + height / 2;
+      const previousX = bodyObject.x;
+      const deltaX = nextX - previousX;
+
+      bodyObject.setPosition(nextX, nextY);
+      bodyObject.body.updateFromGameObject();
+      bodyObject.body.setVelocity((deltaX * 1000) / safeDelta, 0);
+      this.drawMovingPlatformArt(movingPlatform);
+
+      // The sand lift carries the crab when it is standing on top, keeping the
+      // Level 2 moving-platform puzzle forgiving instead of slippery.
+      if (this.isPlayerStandingOnMovingPlatform(movingPlatform) && Math.abs(deltaX) > 0) {
+        this.player.x = Phaser.Math.Clamp(this.player.x + deltaX, 0, GAME_WIDTH);
+        this.player.body.x += deltaX;
+      }
+
+      movingPlatform.previousX = nextX;
+    });
+  }
+
+  isPlayerStandingOnMovingPlatform(movingPlatform) {
+    if (!this.player?.body) {
+      return false;
+    }
+
+    const body = this.player.body;
+    const { bodyObject, width, height } = movingPlatform;
+    const platformLeft = bodyObject.x - width / 2;
+    const platformRight = bodyObject.x + width / 2;
+    const platformTop = bodyObject.y - height / 2;
+    const playerBottom = body.y + body.height;
+    const playerRight = body.x + body.width;
+    const horizontallyOverlapping = playerRight > platformLeft + 2 && body.x < platformRight - 2;
+    const verticallyStanding = Math.abs(playerBottom - platformTop) <= 5;
+
+    return horizontallyOverlapping && verticallyStanding && (body.touching.down || body.blocked.down);
+  }
+
+  createPushBoxes(boxes) {
+    boxes.forEach((boxConfig) => {
+      this.createPushBox(boxConfig);
+    });
+  }
+
+  createPushBox(boxConfig) {
+    const bodyObject = this.add
+      .rectangle(
+        boxConfig.x + boxConfig.width / 2,
+        boxConfig.y + boxConfig.height / 2,
+        boxConfig.width,
+        boxConfig.height,
+        COLORS.stone,
+        1
+      )
+      .setStrokeStyle(2, COLORS.wallDark, 0.95)
+      .setDepth(7);
+    const markings = this.add.graphics().setDepth(8);
+
+    this.physics.add.existing(bodyObject);
+    bodyObject.body.setSize(boxConfig.width, boxConfig.height);
+    bodyObject.body.setAllowGravity(true);
+    bodyObject.body.setCollideWorldBounds(true);
+    bodyObject.body.setBounce(0);
+    bodyObject.body.setDragX(620);
+    bodyObject.body.setMaxVelocity(70, 380);
+    bodyObject.body.pushable = true;
+
+    this.physics.add.collider(this.player, bodyObject);
+    this.staticSolids.forEach((solid) => {
+      this.physics.add.collider(bodyObject, solid);
+    });
+    this.movingPlatforms.forEach((movingPlatform) => {
+      this.physics.add.collider(bodyObject, movingPlatform.bodyObject);
+    });
+    this.pushBoxes.forEach((otherBox) => {
+      this.physics.add.collider(bodyObject, otherBox.bodyObject);
+    });
+
+    this.pushBoxes.push({
+      ...boxConfig,
+      startX: boxConfig.x + boxConfig.width / 2,
+      startY: boxConfig.y + boxConfig.height / 2,
+      bodyObject,
+      markings,
+      resetCooldownUntil: 0
+    });
+  }
+
+  drawPushBoxMarkings(boxState) {
+    const { bodyObject, markings, width, height } = boxState;
+    const left = bodyObject.x - width / 2;
+    const top = bodyObject.y - height / 2;
+    const centerX = bodyObject.x;
+    const centerY = bodyObject.y;
+
+    markings.clear();
+    markings.fillStyle(0x2c170b, 0.22);
+    markings.fillRect(left + 2, top + height - 4, width - 4, 3);
+    markings.lineStyle(1, COLORS.gold, 0.82);
+    markings.strokeRect(left + 3, top + 3, width - 6, height - 6);
+    markings.fillStyle(COLORS.gold, 0.94);
+    markings.fillEllipse(centerX, centerY, 7, 5);
+    markings.fillRect(centerX - 1, top + 5, 2, height - 10);
+    markings.lineStyle(1, COLORS.bronzeDark, 0.65);
+    markings.lineBetween(left + 4, centerY, left + width - 4, centerY);
+  }
+
+  updatePushBoxes() {
+    this.pushBoxes.forEach((boxState) => {
+      const { bodyObject, width, height, bounds } = boxState;
+      const halfWidth = width / 2;
+
+      // Anti-softlock handling: boxes are fenced into their puzzle yard, and if
+      // one drops below the playable floor it returns to its original position.
+      if (bounds) {
+        const clampedX = Phaser.Math.Clamp(
+          bodyObject.x,
+          bounds.minX + halfWidth,
+          bounds.maxX - halfWidth
+        );
+
+        if (clampedX !== bodyObject.x) {
+          bodyObject.setX(clampedX);
+          bodyObject.body.updateFromGameObject();
+          bodyObject.body.setVelocityX(0);
+        }
+      }
+
+      if (bodyObject.y + height / 2 >= GAME_HEIGHT - 2) {
+        this.resetPushBox(boxState);
+        return;
+      }
+
+      this.drawPushBoxMarkings(boxState);
+    });
+  }
+
+  resetPushBox(boxState) {
+    if (this.time.now < boxState.resetCooldownUntil) {
+      return;
+    }
+
+    boxState.resetCooldownUntil = this.time.now + 500;
+    boxState.bodyObject.setPosition(boxState.startX, boxState.startY);
+    boxState.bodyObject.body.reset(boxState.startX, boxState.startY);
+    boxState.bodyObject.body.setVelocity(0, 0);
+    this.drawPushBoxMarkings(boxState);
+    this.showPuzzleMessage("Stone block reset", "#ffd27a");
+  }
+
+  createCollisionWorld(solids) {
+    this.staticSolids = solids.map((solid) => (
+      this.createSolidBody(solid.x, solid.y, solid.width, solid.height)
+    ));
   }
 
   createSolidBody(x, y, width, height) {
@@ -3126,6 +3437,8 @@ class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.updateMovingPlatforms(this.time.now, delta);
+    this.updatePushBoxes();
     this.updatePlayerMovement();
     this.updatePlayerAnimation(this.time.now);
     this.updateBlades(this.time.now);
