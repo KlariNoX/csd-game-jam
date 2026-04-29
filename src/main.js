@@ -901,10 +901,6 @@ class SettingsScene extends Phaser.Scene {
       this.scene.start("MainMenuScene");
     }, 110);
 
-    createTextButton(this, GAME_WIDTH / 2, 222, "Back", () => {
-      this.scene.start("MainMenuScene");
-    }, 110);
-
     addCrtOverlay(this);
   }
 
@@ -1267,23 +1263,10 @@ class GameScene extends Phaser.Scene {
       .setDepth(49)
       .setVisible(false);
 
-    this.pauseQuitGameButton = createTextButton(
+    this.pauseResumeButton = createTextButton(
       this,
       316,
       192,
-      "Quit Game",
-      () => {
-        this.scene.start("MainMenuScene");
-      },
-      118
-    )
-      .setDepth(49)
-      .setVisible(false);
-
-    this.pauseResumeButton = createTextButton(
-      this,
-      GAME_WIDTH / 2,
-      224,
       "Resume",
       () => {
         this.closePauseMenu();
@@ -1303,14 +1286,12 @@ class GameScene extends Phaser.Scene {
       this.pauseToggleMusicButton,
       this.pauseToggleSoundButton,
       this.pauseQuitLevelButton,
-      this.pauseQuitGameButton,
       this.pauseResumeButton
     ];
     this.pauseMenuButtons = [
       this.pauseToggleMusicButton,
       this.pauseToggleSoundButton,
       this.pauseQuitLevelButton,
-      this.pauseQuitGameButton,
       this.pauseResumeButton
     ];
 
