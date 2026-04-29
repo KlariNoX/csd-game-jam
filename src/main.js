@@ -24,6 +24,14 @@ const CRAB_SPRITESHEET_URL = new URL(
   "../assets/Crab Sprite Sheet.png",
   import.meta.url
 ).href;
+const BG_MUSIC_URL = new URL("../assets/bg-music.mp3", import.meta.url).href;
+const TRACK_URLS = [
+  new URL("../assets/Track 1.mp3", import.meta.url).href,
+  new URL("../assets/Track 2.mp3", import.meta.url).href,
+  new URL("../assets/Track 3.mp3", import.meta.url).href,
+  new URL("../assets/Track 4.mp3", import.meta.url).href,
+  new URL("../assets/Track 5.mp3", import.meta.url).href
+];
 
 const COLORS = {
   sandDark: 0x7a5326,
@@ -227,8 +235,55 @@ const EXIT_POINT = { x: 430, y: 222 };
 
 const sharedState = {
   musicOn: true,
-  soundOn: true
+  soundOn: true,
+  currentMusicKey: null,
+  currentMusicInfo: null
 };
+
+function playBackgroundMusic(scene, key) {
+  if (sharedState.currentMusicKey === key) {
+    if (!sharedState.musicOn && sharedState.currentMusicInfo && sharedState.currentMusicInfo.isPlaying) {
+      sharedState.currentMusicInfo.pause();
+    } else if (sharedState.musicOn && sharedState.currentMusicInfo && sharedState.currentMusicInfo.isPaused) {
+      sharedState.currentMusicInfo.resume();
+    }
+    return;
+  }
+  
+  if (sharedState.currentMusicInfo) {
+    sharedState.currentMusicInfo.stop();
+    sharedState.currentMusicInfo.destroy();
+  }
+  
+  sharedState.currentMusicKey = key;
+  
+  if (!key) {
+    sharedState.currentMusicInfo = null;
+    return;
+  }
+  
+  sharedState.currentMusicInfo = scene.sound.add(key, { loop: true, volume: 0.4 });
+  
+  if (sharedState.musicOn) {
+    sharedState.currentMusicInfo.play();
+  }
+}
+
+function updateMusicSetting() {
+  if (sharedState.currentMusicInfo) {
+    if (sharedState.musicOn) {
+      if (sharedState.currentMusicInfo.isPaused) {
+        sharedState.currentMusicInfo.resume();
+      } else if (!sharedState.currentMusicInfo.isPlaying) {
+        sharedState.currentMusicInfo.play();
+      }
+    } else {
+      if (sharedState.currentMusicInfo.isPlaying) {
+        sharedState.currentMusicInfo.pause();
+      }
+    }
+  }
+}
 
 function getMusicSettingLabel() {
   return `Music: ${sharedState.musicOn ? "On" : "Off"}`;
@@ -801,6 +856,12 @@ function preloadImageIfNeeded(scene, key, url) {
   }
 }
 
+function preloadAudioIfNeeded(scene, key, url) {
+  if (!scene.cache.audio.exists(key)) {
+    scene.load.audio(key, url);
+  }
+}
+
 function preloadCrabSpritesheetIfNeeded(scene) {
   if (!scene.textures.exists(CRAB_SPRITESHEET_KEY)) {
     scene.load.spritesheet(CRAB_SPRITESHEET_KEY, CRAB_SPRITESHEET_URL, {
@@ -999,13 +1060,31 @@ class MainMenuScene extends Phaser.Scene {
   }
 
   preload() {
+    const loadingText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, "Loading...", {
+      fontFamily: FONTS.title,
+      fontSize: "24px",
+      color: COLORS.white
+    }).setOrigin(0.5);
+
+    this.load.on('complete', () => {
+      if (loadingText) {
+        loadingText.destroy();
+      }
+    });
+
     preloadImageIfNeeded(this, MAIN_MENU_BACKGROUND_KEY, MAIN_MENU_BACKGROUND_URL);
     preloadCrabSpritesheetIfNeeded(this);
+    preloadAudioIfNeeded(this, "bg-music", BG_MUSIC_URL);
+    
+    TRACK_URLS.forEach((url, i) => {
+      preloadAudioIfNeeded(this, `track-${i + 1}`, url);
+    });
   }
 
   create() {
     ensureProgress(this);
     addMenuBackground(this);
+    playBackgroundMusic(this, "bg-music");
     ensureCrabAnimations(this);
     createPanel(this, 26, 82, 218, 146);
 
@@ -1098,6 +1177,7 @@ class SettingsScene extends Phaser.Scene {
       () => {
         sharedState.musicOn = !sharedState.musicOn;
         this.refreshLabels();
+        updateMusicSetting();
       },
       100
     );
@@ -1147,6 +1227,7 @@ class LevelSelectScene extends Phaser.Scene {
     addLevelSelectBackground(this);
     drawLevelSelectExit(this);
     addSceneTitle(this, "Level Select", "Choose an unlocked chamber", 56);
+    playBackgroundMusic(this, "bg-music");
 
     this.add
       .text(76, 22, `Unlocked: ${highestUnlockedLevel}/${TOTAL_LEVELS}`, {
@@ -1326,6 +1407,9 @@ class GameScene extends Phaser.Scene {
   create() {
     this.currentLevelIndex = getSelectedLevelIndex(this);
     this.currentLevel = getCurrentLevel(this);
+    
+    playBackgroundMusic(this, `track-${this.currentLevelIndex + 1}`);
+    
     this.levelState = "playing";
     this.pauseMenuOpen = false;
     this.maxWetness = 100;
@@ -1462,6 +1546,7 @@ class GameScene extends Phaser.Scene {
       () => {
         sharedState.musicOn = !sharedState.musicOn;
         this.refreshPauseMenuLabels();
+        updateMusicSetting();
       },
       100
     )
@@ -2284,6 +2369,8 @@ class WinScene extends Phaser.Scene {
       highestUnlockedLevel === TOTAL_LEVELS
         ? "All five chambers are now open for replay."
         : `Levels 1-${highestUnlockedLevel} remain open for replay.`;
+
+    playBackgroundMusic(this, "bg-music");
 
     drawSky(this);
     drawStars(this);
