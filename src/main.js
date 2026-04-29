@@ -285,10 +285,12 @@ const LEVELS = [
       "Ancient Engineer Report #4:\n𓂀 𓃭 𓊹 𓇳 𓈖 𓆣 𓋹\n𓉐 𓏏 𓐍 𓄿 𓅓 𓆑 𓂋\n𓁐 𓃀 𓇋 𓌳 𓎛 𓊃 𓊪",
     startX: 36,
     startY: 220,
-    goal: { x: 430, y: 140, width: 34, height: 112, kind: "door", label: "EXIT" },
+    goal: { x: 430, y: 60, width: 54, height: 60, kind: "door", label: "EXIT" },
     solids: [
-      { x: 0, y: 232, width: 420, height: 38, style: "stone" },
-      { x: 102, y: 118, width: 16, height: 114, style: "pillar" },
+      { x: 0, y: 232, width: 420, height: 38, style: "stone" }, // Ground
+      { x: 102, y: 78, width: 16, height: 154, style: "pillar" },
+      { x: 52+15, y: 175, width: 35, height: 10, style: "pillar" }, // Platform
+      { x: 0, y: 120, width: 35, height: 10, style: "pillar" }, // Platform
       { x: 196, y: 118, width: 16, height: 114, style: "pillar" },
       { x: 290, y: 118, width: 16, height: 114, style: "pillar" },
       { x: 384, y: 118, width: 16, height: 114, style: "pillar" }
@@ -297,6 +299,9 @@ const LEVELS = [
       { x: 156, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 0, fake: false },
       { x: 250, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 720, fake: false },
       { x: 344, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 0, fake: true }
+    ],
+    spikes: [
+      
     ]
   },
   {
