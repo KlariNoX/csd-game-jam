@@ -210,12 +210,12 @@ const LEVELS = [
       { type: "ceilingLedge", x: 36, y: 100, width: 92, height: 12 }
     ],
     solids: [
-      // Sand Hall uses the background floor line at y=202, then custom ruin ledges step upward to the sand lift.
+      // Sand Hall uses the background floor line at y=202, then steps upward to the sand lift.
       { x: 0, y: 202, width: 84, height: 38, style: "backgroundFloor" },
-      { x: 102, y: 187, width: 58, height: 12, style: "ruinLedge" },
-      { x: 182, y: 169, width: 48, height: 12, style: "ruinLedge" },
+      { x: 102, y: 187, width: 58, height: 12, style: "warmSand" },
+      { x: 182, y: 169, width: 48, height: 12, style: "stone" },
       { x: 288, y: 134, width: 64, height: 12, style: "ruinLedge" },
-      { x: 360, y: 164, width: 48, height: 12, style: "ruinLedge" },
+      { x: 360, y: 164, width: 48, height: 12, style: "stone" },
       { x: 420, y: 202, width: 60, height: 38, style: "backgroundFloor" }
     ],
     movingPlatforms: [
