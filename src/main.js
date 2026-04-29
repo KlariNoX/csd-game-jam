@@ -7,6 +7,7 @@ const PROGRESS_STORAGE_KEY = "crab-out-of-nile-progress";
 const MAIN_MENU_BACKGROUND_KEY = "main-menu-background";
 const LEVEL_SELECT_BACKGROUND_KEY = "level-select-background";
 const CRAB_SPRITESHEET_KEY = "crab-sheet";
+const PYRAMID_TILEGROUND_KEY = "pyramid-tileground";
 const CRAB_FRAME_SIZE = 32;
 const CRAB_IDLE_FRAME = 0;
 const CRAB_MENU_IDLE_FRAMES = [0, 1, 2, 1];
@@ -22,6 +23,10 @@ const LEVEL_SELECT_BACKGROUND_URL = new URL(
 ).href;
 const CRAB_SPRITESHEET_URL = new URL(
   "../assets/Crab Sprite Sheet.png",
+  import.meta.url
+).href;
+const PYRAMID_TILEGROUND_URL = new URL(
+  "../assets/Pyramid Ruins/PR_TileGround 16x16.png",
   import.meta.url
 ).href;
 const BG_MUSIC_URL = new URL("../assets/bg-music.mp3", import.meta.url).href;
@@ -134,24 +139,40 @@ const LABEL_STYLE = {
   color: COLORS.white
 };
 
+const RUIN_PLATFORM_FRAMES = {
+  left: 61,
+  middle: 62,
+  right: 63
+};
+
 const LEVELS = [
   {
     name: "Burial Gate",
     report:
-      "Ancient Engineer Report #1:\nThe bronze spikes were installed everywhere except the upper corridor.\nWe ran out of bronze before that strip.\nIf it looks suspiciously empty, trust it.",
-    startX: 40,
-    startY: 220,
-    goal: { x: 430, y: 144, width: 34, height: 108, kind: "door", label: "EXIT" },
+      "Ancient Engineer Report #1:\nThe bronze teeth are obvious, which is polite by ancient standards.\nThe narrow ruin ledges above them still hold.\nHop cleanly to the exit door on the far right.",
+    startX: 34,
+    startY: 198,
+    goal: { x: 438, y: 124, width: 34, height: 83, kind: "door", label: "EXIT" },
     solids: [
-      { x: 0, y: 232, width: 92, height: 38, style: "stone" },
-      { x: 82, y: 204, width: 52, height: 12, style: "stone" },
-      { x: 142, y: 204, width: 142, height: 12, style: "stone" },
-      { x: 128, y: 170, width: 208, height: 12, style: "safe" },
-      { x: 330, y: 232, width: 96, height: 38, style: "stone" }
+      { x: 0, y: 207, width: 58, height: 18, style: "backgroundFloor" },
+      { x: 84, y: 186, width: 48, height: 12, style: "ruinLedge" },
+      { x: 148, y: 166, width: 44, height: 12, style: "ruinLedge" },
+      { x: 210, y: 146, width: 48, height: 12, style: "ruinLedge" },
+      { x: 274, y: 126, width: 44, height: 12, style: "ruinLedge" },
+      { x: 334, y: 150, width: 44, height: 12, style: "ruinLedge" },
+      { x: 394, y: 174, width: 44, height: 12, style: "ruinLedge" },
+      { x: 428, y: 207, width: 52, height: 18, style: "backgroundFloor" }
     ],
     spikes: [
-      { x: 102, y: 232, width: 220 },
-      { x: 144, y: 204, width: 138 }
+      { x: 58, y: 207, width: 30 },
+      { x: 132, y: 207, width: 30 },
+      { x: 192, y: 207, width: 34 },
+      { x: 258, y: 207, width: 36 },
+      { x: 318, y: 207, width: 34 },
+      { x: 378, y: 207, width: 38 },
+      { x: 234, y: 146, width: 22 },
+      { x: 354, y: 150, width: 20 },
+      { x: 394, y: 174, width: 18 }
     ]
   },
   {
@@ -934,6 +955,20 @@ function preloadCrabSpritesheetIfNeeded(scene) {
   }
 
   return false;
+}
+
+function preloadPyramidRuinsAssetsIfNeeded(scene) {
+  let queuedAsset = false;
+
+  if (!scene.textures.exists(PYRAMID_TILEGROUND_KEY)) {
+    scene.load.spritesheet(PYRAMID_TILEGROUND_KEY, PYRAMID_TILEGROUND_URL, {
+      frameWidth: 16,
+      frameHeight: 16
+    });
+    queuedAsset = true;
+  }
+
+  return queuedAsset;
 }
 
 function preloadMainMenuAssets(scene) {
@@ -1722,6 +1757,7 @@ class GameScene extends Phaser.Scene {
 
   preload() {
     preloadLevelBackgroundIfNeeded(this, getSelectedLevelIndex(this));
+    preloadPyramidRuinsAssetsIfNeeded(this);
     preloadCrabSpritesheetIfNeeded(this);
   }
 
@@ -2079,6 +2115,15 @@ class GameScene extends Phaser.Scene {
   }
 
   drawSolidRect(graphics, rect) {
+    if (rect.style === "backgroundFloor") {
+      return;
+    }
+
+    if (rect.style === "ruinLedge") {
+      this.drawRuinPlatform(rect);
+      return;
+    }
+
     if (rect.style === "warmSand") {
       graphics.fillStyle(COLORS.sandDark, 1);
       graphics.fillRect(rect.x, rect.y + rect.height - 4, rect.width, 4);
@@ -2117,6 +2162,38 @@ class GameScene extends Phaser.Scene {
       for (let socketX = rect.x + 10; socketX < rect.x + rect.width - 8; socketX += 16) {
         graphics.fillRect(socketX, rect.y - 2, 8, 4);
       }
+    }
+  }
+
+  drawRuinPlatform(rect) {
+    const platformGraphics = this.add.graphics().setDepth(4);
+    const tileCount = Math.max(2, Math.ceil(rect.width / 16));
+    const displayWidth = tileCount * 16;
+
+    platformGraphics.fillStyle(0x3c2518, 0.82);
+    platformGraphics.fillRect(rect.x - 2, rect.y + 10, displayWidth + 4, 7);
+    platformGraphics.fillStyle(0x8b5630, 0.92);
+    platformGraphics.fillRect(rect.x, rect.y + 8, displayWidth, 7);
+    platformGraphics.lineStyle(1, 0x2c170b, 0.75);
+    platformGraphics.strokeRect(rect.x - 1, rect.y + 7, displayWidth + 2, 10);
+
+    if (!this.textures.exists(PYRAMID_TILEGROUND_KEY)) {
+      return;
+    }
+
+    for (let tileIndex = 0; tileIndex < tileCount; tileIndex += 1) {
+      let frame = RUIN_PLATFORM_FRAMES.middle;
+
+      if (tileIndex === 0) {
+        frame = RUIN_PLATFORM_FRAMES.left;
+      } else if (tileIndex === tileCount - 1) {
+        frame = RUIN_PLATFORM_FRAMES.right;
+      }
+
+      this.add
+        .image(rect.x + tileIndex * 16, rect.y, PYRAMID_TILEGROUND_KEY, frame)
+        .setOrigin(0)
+        .setDepth(5);
     }
   }
 
@@ -2554,12 +2631,12 @@ class GameScene extends Phaser.Scene {
 
   updateCrushers(time) {
     this.crushers.forEach((crusher) => {
-      if (crusher.fake) {
-        const fakeY =
-          crusher.topY + crusher.height / 2 + Math.sin(time / 220) * 1.5;
+    if (crusher.fake) {
+      const fakeY =
+        crusher.topY + crusher.height / 2 + Math.sin(time / 220) * 1.5;
 
-        crusher.head.setY(fakeY);
-        crusher.warning.setAlpha(0.12);
+      crusher.head.setY(fakeY);
+      crusher.warning.setAlpha(0.12);
         crusher.active = false;
         crusher.hitRect.setTo(
           crusher.x - crusher.width / 2,
