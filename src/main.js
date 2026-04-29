@@ -31,16 +31,21 @@ const COLORS = {
   gold: "#f3d36b"
 };
 
+const FONTS = {
+  ui: '"Trebuchet MS", Verdana, sans-serif',
+  title: 'Georgia, "Times New Roman", serif'
+};
+
 const BUTTON_STYLE = {
-  fontFamily: "Verdana",
+  fontFamily: FONTS.ui,
   fontSize: "14px",
   color: COLORS.white,
-  backgroundColor: "#4b2f1c",
+  backgroundColor: "#5c3820",
   padding: { x: 14, y: 8 }
 };
 
 const LABEL_STYLE = {
-  fontFamily: "Verdana",
+  fontFamily: FONTS.ui,
   fontSize: "14px",
   color: COLORS.white
 };
@@ -172,6 +177,134 @@ const sharedState = {
   musicOn: true,
   soundOn: true
 };
+
+function resumeAudioContext(scene) {
+  if (!scene.sound?.context) {
+    return null;
+  }
+
+  const audioContext = scene.sound.context;
+
+  if (audioContext.state === "suspended") {
+    audioContext.resume().catch(() => {
+      // Browsers may block auto-resume until another gesture; failing quietly keeps UI responsive.
+    });
+  }
+
+  return audioContext;
+}
+
+function playGeneratedSound(scene, notes, masterVolume = 0.05) {
+  if (!sharedState.soundOn || !notes.length) {
+    return;
+  }
+
+  const audioContext = resumeAudioContext(scene);
+
+  if (!audioContext) {
+    return;
+  }
+
+  const masterGain = audioContext.createGain();
+  const sequenceStart = audioContext.currentTime + 0.01;
+  let cursor = sequenceStart;
+
+  masterGain.gain.setValueAtTime(masterVolume, sequenceStart);
+  masterGain.connect(audioContext.destination);
+
+  notes.forEach((note) => {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const duration = note.duration ?? 0.08;
+    const frequency = note.frequency ?? 440;
+    const endFrequency = note.endFrequency ?? frequency;
+    const noteVolume = note.volume ?? 1;
+    const startTime = cursor + (note.delay ?? 0);
+    const attackTime = Math.min(0.015, duration * 0.35);
+    const releaseStart = Math.max(startTime + attackTime, startTime + duration - 0.03);
+
+    oscillator.type = note.type ?? "square";
+    oscillator.frequency.setValueAtTime(frequency, startTime);
+    oscillator.frequency.linearRampToValueAtTime(endFrequency, startTime + duration);
+
+    gainNode.gain.setValueAtTime(0.0001, startTime);
+    gainNode.gain.exponentialRampToValueAtTime(
+      Math.max(0.0002, noteVolume),
+      startTime + attackTime
+    );
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, releaseStart + 0.03);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(masterGain);
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration + 0.05);
+
+    cursor = startTime + duration;
+  });
+
+  window.setTimeout(() => {
+    masterGain.disconnect();
+  }, Math.max(120, Math.ceil((cursor - sequenceStart) * 1000) + 120));
+}
+
+function playSoundCue(scene, cue) {
+  switch (cue) {
+    case "ui-hover":
+      playGeneratedSound(
+        scene,
+        [{ frequency: 620, endFrequency: 700, duration: 0.045, volume: 0.45 }],
+        0.035
+      );
+      break;
+    case "ui-click":
+      playGeneratedSound(
+        scene,
+        [{ frequency: 420, endFrequency: 320, duration: 0.08, volume: 0.7, type: "triangle" }],
+        0.04
+      );
+      break;
+    case "jump":
+      playGeneratedSound(
+        scene,
+        [{ frequency: 260, endFrequency: 390, duration: 0.09, volume: 0.55 }],
+        0.035
+      );
+      break;
+    case "death":
+      playGeneratedSound(
+        scene,
+        [
+          { frequency: 240, endFrequency: 150, duration: 0.12, volume: 0.55, type: "sawtooth" },
+          { frequency: 150, endFrequency: 92, duration: 0.14, volume: 0.48, type: "sawtooth" }
+        ],
+        0.045
+      );
+      break;
+    case "dry":
+      playGeneratedSound(
+        scene,
+        [
+          { frequency: 180, endFrequency: 120, duration: 0.1, volume: 0.5, type: "triangle" },
+          { frequency: 120, endFrequency: 84, duration: 0.12, volume: 0.42, type: "triangle" }
+        ],
+        0.04
+      );
+      break;
+    case "clear":
+      playGeneratedSound(
+        scene,
+        [
+          { frequency: 420, endFrequency: 420, duration: 0.07, volume: 0.6, type: "triangle" },
+          { frequency: 560, endFrequency: 560, duration: 0.08, volume: 0.62, type: "triangle", delay: 0.01 },
+          { frequency: 740, endFrequency: 740, duration: 0.12, volume: 0.68, type: "triangle", delay: 0.015 }
+        ],
+        0.045
+      );
+      break;
+    default:
+      break;
+  }
+}
 
 function clampLevelIndex(levelIndex) {
   return Phaser.Math.Clamp(levelIndex, 0, TOTAL_LEVELS - 1);
@@ -420,22 +553,37 @@ function createTextButton(scene, x, y, label, onClick, width = 140) {
     .setOrigin(0.5)
     .setInteractive({ useHandCursor: true });
 
+  button.baseY = y;
   button.setFixedSize(width, 34);
   button.setAlign("center");
   button.setPadding(0, 8, 0, 0);
+  button.setDepth(40);
+  button.setShadow(0, 2, "#1a0f08", 0, true, true);
 
   button
     .on("pointerover", () => {
-      button.setStyle({ backgroundColor: "#6f472c", color: "#fff3b4" });
+      button.setStyle({ backgroundColor: "#7b4d2b", color: "#fff3b4" });
+      button.setScale(1.04);
+      button.setY(button.baseY - 1);
+      playSoundCue(scene, "ui-hover");
     })
     .on("pointerout", () => {
       button.setStyle({
         backgroundColor: BUTTON_STYLE.backgroundColor,
         color: BUTTON_STYLE.color
       });
+      button.setScale(1);
+      button.setY(button.baseY);
     })
     .on("pointerdown", () => {
+      playSoundCue(scene, "ui-click");
+      button.setScale(0.98);
+      button.setY(button.baseY + 1);
       onClick();
+    })
+    .on("pointerup", () => {
+      button.setScale(1.04);
+      button.setY(button.baseY - 1);
     });
 
   return button;
@@ -444,13 +592,14 @@ function createTextButton(scene, x, y, label, onClick, width = 140) {
 function addSceneTitle(scene, title, subtitle = "") {
   scene.add
     .text(GAME_WIDTH / 2, 36, title, {
-      fontFamily: "Georgia",
+      fontFamily: FONTS.title,
       fontSize: "28px",
       color: COLORS.gold,
       stroke: "#2c170b",
       strokeThickness: 6
     })
-    .setOrigin(0.5);
+    .setOrigin(0.5)
+    .setDepth(30);
 
   if (subtitle) {
     scene.add
@@ -458,8 +607,27 @@ function addSceneTitle(scene, title, subtitle = "") {
         ...LABEL_STYLE,
         fontSize: "12px"
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(30);
   }
+}
+
+function addCrtOverlay(scene) {
+  const graphics = scene.add.graphics().setDepth(35);
+
+  graphics.fillStyle(0x120a05, 0.1);
+
+  for (let y = 0; y < GAME_HEIGHT; y += 4) {
+    graphics.fillRect(0, y, GAME_WIDTH, 1);
+  }
+
+  graphics.fillStyle(0x050302, 0.16);
+  graphics.fillRect(0, 0, GAME_WIDTH, 8);
+  graphics.fillRect(0, GAME_HEIGHT - 8, GAME_WIDTH, 8);
+  graphics.fillRect(0, 0, 8, GAME_HEIGHT);
+  graphics.fillRect(GAME_WIDTH - 8, 0, 8, GAME_HEIGHT);
+
+  return graphics;
 }
 
 function addMenuBackground(scene) {
@@ -505,7 +673,7 @@ function drawLevelSelectExit(scene) {
 
   scene.add
     .text(432, 58, "EXIT", {
-      fontFamily: "Verdana",
+      fontFamily: FONTS.ui,
       fontSize: "12px",
       color: COLORS.white
     })
@@ -541,7 +709,7 @@ function createLevelNode(scene, x, y, levelIndex, unlocked, onSelect) {
   if (unlocked) {
     const label = scene.add
       .text(0, 0, String(levelIndex + 1), {
-        fontFamily: "Verdana",
+        fontFamily: FONTS.ui,
         fontSize: "12px",
         color: "#2c170b"
       })
@@ -602,6 +770,8 @@ class MainMenuScene extends Phaser.Scene {
     createTextButton(this, GAME_WIDTH / 2, 204, "Settings", () => {
       this.scene.start("SettingsScene");
     });
+
+    addCrtOverlay(this);
   }
 }
 
@@ -657,6 +827,8 @@ class SettingsScene extends Phaser.Scene {
     createTextButton(this, GAME_WIDTH / 2, 222, "Back", () => {
       this.scene.start("MainMenuScene");
     }, 110);
+
+    addCrtOverlay(this);
   }
 
   refreshLabels() {
@@ -674,6 +846,7 @@ class LevelSelectScene extends Phaser.Scene {
 
   create() {
     const highestUnlockedLevel = getHighestUnlockedLevel(this);
+    const clearBannerText = this.registry.get("clearBannerText");
 
     drawPyramidInterior(this);
     drawLevelSelectExit(this);
@@ -681,7 +854,7 @@ class LevelSelectScene extends Phaser.Scene {
 
     this.add
       .text(76, 22, `Unlocked: ${highestUnlockedLevel}/${TOTAL_LEVELS}`, {
-        fontFamily: "Verdana",
+        fontFamily: FONTS.ui,
         fontSize: "12px",
         color: COLORS.white
       })
@@ -722,7 +895,7 @@ class LevelSelectScene extends Phaser.Scene {
 
       this.add
         .text(nodePosition.x, nodePosition.y + 24, `L${levelIndex + 1}`, {
-          fontFamily: "Verdana",
+          fontFamily: FONTS.ui,
           fontSize: "11px",
           color: isLevelUnlocked(this, levelIndex) ? COLORS.white : "#b59a7b"
         })
@@ -735,18 +908,22 @@ class LevelSelectScene extends Phaser.Scene {
       .text(
         188,
         234,
-        "Gold chambers can be replayed. Dark seals stay locked.",
+        clearBannerText || "Gold chambers can be replayed. Dark seals stay locked.",
         {
-          fontFamily: "Verdana",
+          fontFamily: FONTS.ui,
           fontSize: "11px",
-          color: COLORS.white
+          color: clearBannerText ? COLORS.gold : COLORS.white
         }
       )
       .setOrigin(0.5);
 
+    this.registry.set("clearBannerText", "");
+
     createTextButton(this, 404, 234, "Main Menu", () => {
       this.scene.start("MainMenuScene");
     }, 120);
+
+    addCrtOverlay(this);
   }
 }
 
@@ -763,7 +940,7 @@ class ReportScene extends Phaser.Scene {
 
     this.add
       .text(GAME_WIDTH / 2, 30, "Chamber Record", {
-        fontFamily: "Georgia",
+        fontFamily: FONTS.title,
         fontSize: "24px",
         color: "#6a3f18",
         stroke: "#f7e2b4",
@@ -773,7 +950,7 @@ class ReportScene extends Phaser.Scene {
 
     this.add
       .text(GAME_WIDTH / 2, 52, `Level ${levelIndex + 1}: ${level.name}`, {
-        fontFamily: "Georgia",
+        fontFamily: FONTS.title,
         fontSize: "14px",
         color: "#6a3f18"
       })
@@ -781,7 +958,7 @@ class ReportScene extends Phaser.Scene {
 
     this.add
       .text(GAME_WIDTH / 2, 118, level.report, {
-        fontFamily: "Georgia",
+        fontFamily: FONTS.title,
         fontSize: "16px",
         color: "#3e2713",
         align: "center",
@@ -792,7 +969,7 @@ class ReportScene extends Phaser.Scene {
 
     this.add
       .text(GAME_WIDTH / 2, 196, "Press Space or click below to enter the chamber.", {
-        fontFamily: "Verdana",
+        fontFamily: FONTS.ui,
         fontSize: "11px",
         color: "#5d4127"
       })
@@ -825,6 +1002,8 @@ class ReportScene extends Phaser.Scene {
     createTextButton(this, 310, 228, "Enter Chamber", () => {
       enterChamber();
     }, 160);
+
+    addCrtOverlay(this);
   }
 }
 
@@ -893,6 +1072,8 @@ class GameScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE");
+
+    addCrtOverlay(this);
   }
 
   ensureCrabTextures() {
@@ -1058,7 +1239,7 @@ class GameScene extends Phaser.Scene {
 
     this.add
       .text(46, 120, "START", {
-        fontFamily: "Verdana",
+        fontFamily: FONTS.ui,
         fontSize: "10px",
         color: "#d8c39b"
       })
@@ -1078,7 +1259,7 @@ class GameScene extends Phaser.Scene {
 
       this.add
         .text(goal.x + goal.width / 2, goal.y + 12, goal.label, {
-          fontFamily: "Verdana",
+          fontFamily: FONTS.ui,
           fontSize: "11px",
           color: COLORS.white
         })
@@ -1105,7 +1286,7 @@ class GameScene extends Phaser.Scene {
 
     this.add
       .text(goal.x + goal.width / 2, goal.y - 12, goal.label, {
-        fontFamily: "Verdana",
+        fontFamily: FONTS.ui,
         fontSize: "11px",
         color: COLORS.gold
       })
@@ -1298,7 +1479,7 @@ class GameScene extends Phaser.Scene {
 
     this.add
       .text(12, 14, "WETNESS", {
-        fontFamily: "Verdana",
+        fontFamily: FONTS.ui,
         fontSize: "11px",
         color: COLORS.white
       })
@@ -1306,7 +1487,7 @@ class GameScene extends Phaser.Scene {
 
     this.lowWetnessWarning = this.add
       .text(GAME_WIDTH - 12, 14, "Crab is drying out!", {
-        fontFamily: "Verdana",
+        fontFamily: FONTS.ui,
         fontSize: "11px",
         color: "#ffd27a"
       })
@@ -1359,13 +1540,99 @@ class GameScene extends Phaser.Scene {
     }
   }
 
+  showLevelCompleteEffect() {
+    const goalCenterX = this.currentLevel.goal.x + this.currentLevel.goal.width / 2;
+    const goalCenterY = this.currentLevel.goal.y + this.currentLevel.goal.height / 2;
+    const clearText = this.add
+      .text(GAME_WIDTH / 2, 88, "CHAMBER CLEAR", {
+        fontFamily: FONTS.ui,
+        fontSize: "18px",
+        color: COLORS.gold,
+        stroke: "#2c170b",
+        strokeThickness: 5
+      })
+      .setOrigin(0.5)
+      .setDepth(45);
+
+    this.cameras.main.flash(220, 255, 237, 188);
+
+    for (let sparkIndex = 0; sparkIndex < 8; sparkIndex += 1) {
+      const spark = this.add
+        .rectangle(goalCenterX, goalCenterY, 4, 4, sparkIndex % 2 === 0 ? 0xfff3bf : 0x8de6ff)
+        .setDepth(44);
+      const sparkAngle = (Math.PI * 2 * sparkIndex) / 8;
+      const travelDistance = 22 + sparkIndex * 2;
+
+      this.tweens.add({
+        targets: spark,
+        x: goalCenterX + Math.cos(sparkAngle) * travelDistance,
+        y: goalCenterY + Math.sin(sparkAngle) * travelDistance,
+        alpha: 0,
+        scaleX: 0.2,
+        scaleY: 0.2,
+        duration: 340,
+        ease: "Quad.Out",
+        onComplete: () => {
+          spark.destroy();
+        }
+      });
+    }
+
+    this.tweens.add({
+      targets: clearText,
+      y: 74,
+      alpha: 0,
+      duration: 520,
+      delay: 140,
+      ease: "Quad.Out",
+      onComplete: () => {
+        clearText.destroy();
+      }
+    });
+
+    this.tweens.add({
+      targets: this.player,
+      angle: 0,
+      y: this.player.y - 10,
+      duration: 160,
+      yoyo: true,
+      ease: "Sine.Out"
+    });
+  }
+
   handleGoalReached() {
     if (this.levelState !== "playing") {
       return;
     }
 
     this.levelState = "won";
-    this.scene.start("WinScene");
+    this.physics.world.pause();
+    this.player.setVelocity(0, 0);
+    this.player.setTint(0xfff2c4);
+    playSoundCue(this, "clear");
+    this.showLevelCompleteEffect();
+
+    const unlockStatus = unlockNextLevel(this, this.currentLevelIndex);
+    let clearBannerText = `Level ${this.currentLevelIndex + 1} clear.`;
+
+    if (unlockStatus.didUnlockNewLevel) {
+      clearBannerText += ` Level ${unlockStatus.newlyUnlockedLevel} unlocked.`;
+    } else if (this.currentLevelIndex === TOTAL_LEVELS - 1) {
+      clearBannerText = "Final chamber clear. All chambers open.";
+    } else {
+      clearBannerText += " Replay unlocked.";
+    }
+
+    this.registry.set("clearBannerText", clearBannerText);
+
+    this.time.delayedCall(720, () => {
+      if (this.currentLevelIndex === TOTAL_LEVELS - 1) {
+        this.scene.start("WinScene");
+        return;
+      }
+
+      this.scene.start("LevelSelectScene");
+    });
   }
 
   handleHazardDeath(message) {
@@ -1374,10 +1641,12 @@ class GameScene extends Phaser.Scene {
     }
 
     this.levelState = "dead";
+    this.cameras.main.shake(180, 0.006);
     this.physics.world.pause();
     this.player.setVelocity(0, 0);
     this.player.setTint(0xffd27a);
     this.player.setTexture("crab-jump");
+    playSoundCue(this, "death");
     this.lowWetnessWarning
       .setVisible(true)
       .setAlpha(1)
@@ -1396,9 +1665,11 @@ class GameScene extends Phaser.Scene {
     }
 
     this.levelState = "dry";
+    this.cameras.main.shake(160, 0.005);
     this.physics.world.pause();
     this.player.setVelocity(0, 0);
     this.player.setTint(0xf2b661);
+    playSoundCue(this, "dry");
     this.lowWetnessWarning
       .setVisible(true)
       .setAlpha(1)
@@ -1432,6 +1703,7 @@ class GameScene extends Phaser.Scene {
 
     if (jumpPressed && onGround) {
       this.player.setVelocityY(-320);
+      playSoundCue(this, "jump");
     }
 
     this.player.setFlipX(this.facingDirection < 0);
@@ -1640,16 +1912,11 @@ class WinScene extends Phaser.Scene {
 
   create() {
     const currentLevelIndex = getSelectedLevelIndex(this);
-    const unlockStatus = unlockNextLevel(this, currentLevelIndex);
-    const highestUnlockedLevel = unlockStatus.highestUnlockedLevel;
-    const unlockedEverything = highestUnlockedLevel === TOTAL_LEVELS;
-    let progressMessage = `Levels 1-${highestUnlockedLevel} remain open for replay.`;
-
-    if (unlockStatus.didUnlockNewLevel) {
-      progressMessage = `Level ${unlockStatus.newlyUnlockedLevel} is now unlocked.`;
-    } else if (unlockedEverything) {
-      progressMessage = "All five levels are already unlocked.";
-    }
+    const highestUnlockedLevel = getHighestUnlockedLevel(this);
+    const progressMessage =
+      highestUnlockedLevel === TOTAL_LEVELS
+        ? "All five chambers are now open for replay."
+        : `Levels 1-${highestUnlockedLevel} remain open for replay.`;
 
     drawSky(this);
     drawStars(this);
@@ -1698,6 +1965,8 @@ class WinScene extends Phaser.Scene {
     createTextButton(this, 320, 214, "Main Menu", () => {
       this.scene.start("MainMenuScene");
     }, 120);
+
+    addCrtOverlay(this);
   }
 }
 
@@ -1707,6 +1976,7 @@ const config = {
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
   backgroundColor: "#120d07",
+  autoRound: true,
   pixelArt: true,
   roundPixels: true,
   antialias: false,
