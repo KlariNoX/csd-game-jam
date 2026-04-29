@@ -1257,10 +1257,30 @@ function showOpeningStoryboard(onComplete) {
     whiteSpace: "nowrap"
   }, "Loading...");
 
+  const skipButton = createIntroElement("button", {
+    position: "absolute",
+    top: "24px",
+    right: "24px",
+    background: "rgba(0, 0, 0, 0.6)",
+    color: COLORS.white,
+    fontFamily: '"Courier New", monospace',
+    fontSize: "14px",
+    fontWeight: "700",
+    border: "2px solid #fff0bf",
+    padding: "8px 16px",
+    cursor: "pointer",
+    zIndex: "10000"
+  }, "Skip (Esc)");
+
   imageFrame.append(image, promptText);
   imageStage.appendChild(imageFrame);
   overlay.appendChild(imageStage);
+  overlay.appendChild(skipButton);
   document.body.appendChild(overlay);
+
+  skipButton.onclick = () => {
+    finishIntro();
+  };
 
   const cleanup = () => {
     window.removeEventListener("keydown", handleKeyDown);
@@ -1328,12 +1348,20 @@ function showOpeningStoryboard(onComplete) {
     }, 160);
   }
   function handleKeyDown(event) {
-    if (event.code !== "Space" || event.repeat) {
+    if (event.repeat) {
       return;
     }
 
-    event.preventDefault();
-    advanceFrame();
+    if (event.code === "Escape") {
+      event.preventDefault();
+      finishIntro();
+      return;
+    }
+
+    if (event.code === "Space") {
+      event.preventDefault();
+      advanceFrame();
+    }
   }
 
   window.addEventListener("keydown", handleKeyDown);
