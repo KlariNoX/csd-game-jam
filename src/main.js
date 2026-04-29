@@ -205,6 +205,14 @@ const sharedState = {
   soundOn: true
 };
 
+function getMusicSettingLabel() {
+  return `Music: ${sharedState.musicOn ? "On" : "Off"}`;
+}
+
+function getSoundSettingLabel() {
+  return `Crab scuttle sound: ${sharedState.soundOn ? "On" : "Off"}`;
+}
+
 function resumeAudioContext(scene) {
   if (!scene.sound?.context) {
     return null;
@@ -901,10 +909,8 @@ class SettingsScene extends Phaser.Scene {
   }
 
   refreshLabels() {
-    this.musicText.setText(`Music: ${sharedState.musicOn ? "On" : "Off"}`);
-    this.soundText.setText(
-      `Crab scuttle sound: ${sharedState.soundOn ? "On" : "Off"}`
-    );
+    this.musicText.setText(getMusicSettingLabel());
+    this.soundText.setText(getSoundSettingLabel());
   }
 }
 
@@ -1094,6 +1100,7 @@ class GameScene extends Phaser.Scene {
     this.currentLevelIndex = getSelectedLevelIndex(this);
     this.currentLevel = getCurrentLevel(this);
     this.levelState = "playing";
+    this.pauseMenuOpen = false;
     this.maxWetness = 100;
     this.wetness = this.maxWetness;
     this.lowWetnessThreshold = 24;
@@ -1150,8 +1157,211 @@ class GameScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys("W,A,S,D,SPACE");
+    this.escapeKey = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.ESC
+    );
+    this.handleEscapeKeyDown = () => {
+      if (this.pauseMenuOpen) {
+        this.closePauseMenu();
+        return;
+      }
+
+      if (this.levelState === "playing") {
+        this.openPauseMenu();
+      }
+    };
+    this.escapeKey.on("down", this.handleEscapeKeyDown);
+    this.events.once("shutdown", () => {
+      this.escapeKey.off("down", this.handleEscapeKeyDown);
+    });
+
+    this.createPauseMenu();
 
     addCrtOverlay(this);
+  }
+
+  createPauseMenu() {
+    this.pauseMenuShade = this.add
+      .rectangle(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2,
+        GAME_WIDTH,
+        GAME_HEIGHT,
+        0x120d07,
+        0.72
+      )
+      .setDepth(46)
+      .setVisible(false);
+    this.pauseMenuPanel = createPanel(this, 92, 34, 296, 202)
+      .setDepth(47)
+      .setVisible(false);
+    this.pauseMenuTitle = this.add
+      .text(GAME_WIDTH / 2, 58, "Level Settings", {
+        fontFamily: FONTS.title,
+        fontSize: "24px",
+        color: COLORS.gold,
+        stroke: "#2c170b",
+        strokeThickness: 5
+      })
+      .setOrigin(0.5)
+      .setDepth(48)
+      .setVisible(false);
+    this.pauseMenuHint = this.add
+      .text(GAME_WIDTH / 2, 80, "Press Esc to resume", {
+        fontFamily: FONTS.ui,
+        fontSize: "11px",
+        color: COLORS.white
+      })
+      .setOrigin(0.5)
+      .setDepth(48)
+      .setVisible(false);
+    this.pauseMusicText = this.add
+      .text(122, 108, "", LABEL_STYLE)
+      .setOrigin(0, 0.5)
+      .setDepth(48)
+      .setVisible(false);
+    this.pauseSoundText = this.add
+      .text(122, 146, "", LABEL_STYLE)
+      .setOrigin(0, 0.5)
+      .setDepth(48)
+      .setVisible(false);
+
+    this.pauseToggleMusicButton = createTextButton(
+      this,
+      314,
+      108,
+      "Toggle",
+      () => {
+        sharedState.musicOn = !sharedState.musicOn;
+        this.refreshPauseMenuLabels();
+      },
+      100
+    )
+      .setDepth(49)
+      .setVisible(false);
+
+    this.pauseToggleSoundButton = createTextButton(
+      this,
+      314,
+      146,
+      "Toggle",
+      () => {
+        sharedState.soundOn = !sharedState.soundOn;
+        this.refreshPauseMenuLabels();
+      },
+      100
+    )
+      .setDepth(49)
+      .setVisible(false);
+
+    this.pauseQuitLevelButton = createTextButton(
+      this,
+      164,
+      192,
+      "Quit Level",
+      () => {
+        this.scene.start("LevelSelectScene");
+      },
+      118
+    )
+      .setDepth(49)
+      .setVisible(false);
+
+    this.pauseQuitGameButton = createTextButton(
+      this,
+      316,
+      192,
+      "Quit Game",
+      () => {
+        this.scene.start("MainMenuScene");
+      },
+      118
+    )
+      .setDepth(49)
+      .setVisible(false);
+
+    this.pauseResumeButton = createTextButton(
+      this,
+      GAME_WIDTH / 2,
+      224,
+      "Resume",
+      () => {
+        this.closePauseMenu();
+      },
+      120
+    )
+      .setDepth(49)
+      .setVisible(false);
+
+    this.pauseMenuObjects = [
+      this.pauseMenuShade,
+      this.pauseMenuPanel,
+      this.pauseMenuTitle,
+      this.pauseMenuHint,
+      this.pauseMusicText,
+      this.pauseSoundText,
+      this.pauseToggleMusicButton,
+      this.pauseToggleSoundButton,
+      this.pauseQuitLevelButton,
+      this.pauseQuitGameButton,
+      this.pauseResumeButton
+    ];
+    this.pauseMenuButtons = [
+      this.pauseToggleMusicButton,
+      this.pauseToggleSoundButton,
+      this.pauseQuitLevelButton,
+      this.pauseQuitGameButton,
+      this.pauseResumeButton
+    ];
+
+    this.refreshPauseMenuLabels();
+    this.setPauseMenuVisible(false);
+  }
+
+  refreshPauseMenuLabels() {
+    this.pauseMusicText.setText(getMusicSettingLabel());
+    this.pauseSoundText.setText(getSoundSettingLabel());
+  }
+
+  setPauseMenuVisible(isVisible) {
+    this.pauseMenuObjects.forEach((object) => {
+      object.setVisible(isVisible);
+
+      if (typeof object.setActive === "function") {
+        object.setActive(isVisible);
+      }
+    });
+
+    this.pauseMenuButtons.forEach((button) => {
+      if (button.input) {
+        button.input.enabled = isVisible;
+      }
+    });
+  }
+
+  openPauseMenu() {
+    if (this.pauseMenuOpen || this.levelState !== "playing") {
+      return;
+    }
+
+    this.pauseMenuOpen = true;
+    this.physics.world.pause();
+    this.refreshPauseMenuLabels();
+    this.setPauseMenuVisible(true);
+  }
+
+  closePauseMenu() {
+    if (!this.pauseMenuOpen) {
+      return;
+    }
+
+    this.pauseMenuOpen = false;
+    this.setPauseMenuVisible(false);
+
+    if (this.levelState === "playing") {
+      this.physics.world.resume();
+      this.updateWetnessHud();
+    }
   }
 
   ensureCrabTextures() {
@@ -1960,6 +2170,10 @@ class GameScene extends Phaser.Scene {
   }
 
   update(_, delta) {
+    if (this.pauseMenuOpen) {
+      return;
+    }
+
     if (this.levelState !== "playing") {
       return;
     }
