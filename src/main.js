@@ -149,30 +149,33 @@ const LEVELS = [
   {
     name: "Burial Gate",
     report:
-      "Ancient Engineer Report #1:\nThe bronze teeth are obvious, which is polite by ancient standards.\nThe narrow ruin ledges above them still hold.\nHop cleanly to the exit door on the far right.",
+      "Ancient Engineer Report #1:\nThe Burial Gate has two old glyph plates wired into the lock.\nWake both seals, then return to the exit door on the far right.",
     startX: 34,
     startY: 198,
     goal: { x: 438, y: 124, width: 34, height: 83, kind: "door", label: "EXIT" },
+    puzzle: {
+      requiredSwitchCount: 2,
+      switches: [
+        { id: "lower-glyph", x: 106, y: 181, width: 28, height: 8 },
+        { id: "upper-scarab", x: 252, y: 135, width: 30, height: 8 }
+      ]
+    },
     solids: [
-      { x: 0, y: 207, width: 58, height: 18, style: "backgroundFloor" },
-      { x: 84, y: 186, width: 48, height: 12, style: "ruinLedge" },
-      { x: 148, y: 166, width: 44, height: 12, style: "ruinLedge" },
-      { x: 210, y: 146, width: 48, height: 12, style: "ruinLedge" },
-      { x: 274, y: 126, width: 44, height: 12, style: "ruinLedge" },
-      { x: 334, y: 150, width: 44, height: 12, style: "ruinLedge" },
-      { x: 394, y: 174, width: 44, height: 12, style: "ruinLedge" },
+      { x: 0, y: 207, width: 70, height: 18, style: "backgroundFloor" },
+      { x: 92, y: 188, width: 54, height: 12, style: "ruinLedge" },
+      { x: 166, y: 170, width: 48, height: 12, style: "ruinLedge" },
+      { x: 236, y: 142, width: 64, height: 12, style: "ruinLedge" },
+      { x: 320, y: 162, width: 52, height: 12, style: "ruinLedge" },
+      { x: 390, y: 184, width: 46, height: 12, style: "ruinLedge" },
       { x: 428, y: 207, width: 52, height: 18, style: "backgroundFloor" }
     ],
     spikes: [
-      { x: 58, y: 207, width: 30 },
-      { x: 132, y: 207, width: 30 },
-      { x: 192, y: 207, width: 34 },
-      { x: 258, y: 207, width: 36 },
-      { x: 318, y: 207, width: 34 },
-      { x: 378, y: 207, width: 38 },
-      { x: 234, y: 146, width: 22 },
-      { x: 354, y: 150, width: 20 },
-      { x: 394, y: 174, width: 18 }
+      { x: 70, y: 207, width: 22 },
+      { x: 146, y: 207, width: 22 },
+      { x: 214, y: 207, width: 28 },
+      { x: 300, y: 207, width: 28 },
+      { x: 372, y: 207, width: 28 },
+      { x: 346, y: 162, width: 18 }
     ]
   },
   {
@@ -1776,6 +1779,7 @@ class GameScene extends Phaser.Scene {
     this.facingDirection = 1;
     this.blades = [];
     this.crushers = [];
+    this.puzzleState = this.createPuzzleState(this.currentLevel);
 
     this.cameras.main.setBackgroundColor("#120d07");
     addLevelBackground(this, this.currentLevelIndex);
@@ -1814,6 +1818,7 @@ class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.goalZone, () => {
       this.handleGoalReached();
     });
+    this.createPuzzleSwitchZones();
 
     this.createWetnessHud();
     this.updateBlades(this.time.now);
@@ -2019,10 +2024,32 @@ class GameScene extends Phaser.Scene {
     }
   }
 
+  createPuzzleState(level) {
+    const switches = level.puzzle?.switches || [];
+    const requiredSwitchCount = level.puzzle?.requiredSwitchCount || switches.length;
+
+    // Level puzzle state lives in one place so the switch overlaps, switch art,
+    // HUD counter, and locked exit all agree on whether the gate is open.
+    return {
+      hasPuzzle: switches.length > 0 && requiredSwitchCount > 0,
+      requiredSwitchCount,
+      switchesActivated: 0,
+      unlocked: switches.length === 0 || requiredSwitchCount === 0,
+      switchStates: switches.map((switchConfig) => ({
+        config: switchConfig,
+        activated: false,
+        display: null,
+        glow: null,
+        zone: null
+      }))
+    };
+  }
+
   drawLevel(level) {
     const graphics = this.add.graphics().setDepth(2);
 
     this.drawGoalArt(graphics, level.goal);
+    this.createDoorLockVisual(level.goal);
 
     (level.lavaPools || []).forEach((pool) => {
       this.drawLavaPool(graphics, pool);
@@ -2035,6 +2062,8 @@ class GameScene extends Phaser.Scene {
     (level.spikes || []).forEach((spikeStrip) => {
       this.drawSpikeStrip(graphics, spikeStrip);
     });
+
+    this.drawPuzzleSwitches();
 
     (level.blades || []).forEach((blade) => {
       this.createBlade(blade);
@@ -2112,6 +2141,201 @@ class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(10);
+  }
+
+  createDoorLockVisual(goal) {
+    if (!this.puzzleState?.hasPuzzle || goal.kind !== "door") {
+      return;
+    }
+
+    this.doorLockGraphics = this.add.graphics().setDepth(11);
+    this.doorLockText = this.add
+      .text(goal.x + goal.width / 2, goal.y + 18, "", {
+        fontFamily: FONTS.ui,
+        fontSize: "8px",
+        color: COLORS.gold,
+        stroke: "#2c170b",
+        strokeThickness: 3
+      })
+      .setOrigin(0.5)
+      .setDepth(12);
+    this.updateDoorLockVisual();
+  }
+
+  updateDoorLockVisual() {
+    if (!this.doorLockGraphics || !this.puzzleState?.hasPuzzle) {
+      return;
+    }
+
+    const goal = this.currentLevel.goal;
+    const isLocked = this.isExitLocked();
+
+    this.doorLockGraphics.clear();
+
+    if (isLocked) {
+      this.doorLockGraphics.fillStyle(0x2c170b, 0.82);
+      this.doorLockGraphics.fillRoundedRect(goal.x + 3, goal.y + 30, goal.width - 6, 7, 2);
+      this.doorLockGraphics.fillRoundedRect(goal.x + 3, goal.y + 50, goal.width - 6, 7, 2);
+      this.doorLockGraphics.fillStyle(0xb5782c, 1);
+      this.doorLockGraphics.fillRoundedRect(goal.x + 6, goal.y + 31, goal.width - 12, 4, 2);
+      this.doorLockGraphics.fillRoundedRect(goal.x + 6, goal.y + 51, goal.width - 12, 4, 2);
+      this.doorLockGraphics.fillStyle(0xf3d36b, 1);
+      this.doorLockGraphics.fillCircle(goal.x + goal.width / 2, goal.y + 44, 4);
+      this.doorLockGraphics.lineStyle(1, 0x2c170b, 0.9);
+      this.doorLockGraphics.strokeCircle(goal.x + goal.width / 2, goal.y + 44, 4);
+      this.doorLockText.setText("LOCKED").setColor(COLORS.gold).setAlpha(1);
+      return;
+    }
+
+    this.doorLockGraphics.fillStyle(0xfff0a8, 0.26);
+    this.doorLockGraphics.fillRoundedRect(goal.x + 5, goal.y + 10, goal.width - 10, goal.height - 14, {
+      tl: 15,
+      tr: 15,
+      bl: 0,
+      br: 0
+    });
+    this.doorLockGraphics.lineStyle(2, 0xf3d36b, 0.9);
+    this.doorLockGraphics.strokeRoundedRect(goal.x + 4, goal.y + 8, goal.width - 8, goal.height - 10, {
+      tl: 16,
+      tr: 16,
+      bl: 0,
+      br: 0
+    });
+    this.doorLockText.setText("OPEN").setColor("#fff8de").setAlpha(1);
+  }
+
+  drawPuzzleSwitches() {
+    if (!this.puzzleState?.hasPuzzle) {
+      return;
+    }
+
+    this.puzzleState.switchStates.forEach((switchState, switchIndex) => {
+      switchState.glow = this.add.graphics().setDepth(6);
+      switchState.display = this.add.graphics().setDepth(7);
+      this.drawPuzzleSwitchState(switchIndex);
+    });
+  }
+
+  drawPuzzleSwitchState(switchIndex) {
+    const switchState = this.puzzleState.switchStates[switchIndex];
+
+    if (!switchState?.display || !switchState.glow) {
+      return;
+    }
+
+    const { x, y, width, height } = switchState.config;
+    const isActive = switchState.activated;
+    const bodyColor = isActive ? 0xf3d36b : 0x2f7967;
+    const glyphColor = isActive ? 0x2c170b : 0xf3d36b;
+
+    switchState.glow.clear();
+    switchState.display.clear();
+
+    if (isActive) {
+      switchState.glow.fillStyle(0xffe7a3, 0.28);
+      switchState.glow.fillEllipse(x + width / 2, y + height / 2, width + 14, height + 13);
+    }
+
+    // Pressure plates are tiny themed interactables: stone base, gold glyph,
+    // and a brighter glow once the crab has stepped on them.
+    switchState.display.fillStyle(0x2c170b, 0.78);
+    switchState.display.fillRoundedRect(x - 2, y + height - 1, width + 4, 5, 2);
+    switchState.display.fillStyle(0x6d4416, 1);
+    switchState.display.fillRoundedRect(x - 1, y - 1, width + 2, height + 2, 2);
+    switchState.display.fillStyle(bodyColor, 1);
+    switchState.display.fillRoundedRect(x, y, width, height, 2);
+    switchState.display.lineStyle(1, 0x2c170b, 0.85);
+    switchState.display.strokeRoundedRect(x, y, width, height, 2);
+    switchState.display.fillStyle(glyphColor, 1);
+    switchState.display.fillEllipse(x + width / 2, y + height / 2, 7, 5);
+    switchState.display.fillRect(x + width / 2 - 1, y + 1, 2, height - 2);
+    switchState.display.lineStyle(1, glyphColor, 1);
+    switchState.display.lineBetween(x + 6, y + height / 2, x + width - 6, y + height / 2);
+  }
+
+  createPuzzleSwitchZones() {
+    if (!this.puzzleState?.hasPuzzle) {
+      return;
+    }
+
+    this.puzzleState.switchStates.forEach((switchState, switchIndex) => {
+      const { x, y, width, height } = switchState.config;
+      const switchZone = this.add.zone(
+        x + width / 2,
+        y + height / 2,
+        width + 12,
+        height + 18
+      );
+
+      this.physics.add.existing(switchZone, true);
+      this.physics.add.overlap(this.player, switchZone, () => {
+        this.activatePuzzleSwitch(switchIndex);
+      });
+      switchState.zone = switchZone;
+    });
+  }
+
+  activatePuzzleSwitch(switchIndex) {
+    if (this.levelState !== "playing" || !this.puzzleState?.hasPuzzle) {
+      return;
+    }
+
+    const switchState = this.puzzleState.switchStates[switchIndex];
+
+    if (!switchState || switchState.activated) {
+      return;
+    }
+
+    switchState.activated = true;
+    this.puzzleState.switchesActivated += 1;
+    this.drawPuzzleSwitchState(switchIndex);
+    this.playPuzzleSwitchSparkles(switchState.config);
+    this.updatePuzzleHud();
+    playSoundCue(this, "ui-click");
+
+    // Once the required number of plates is active, the Burial Gate becomes a
+    // normal exit again; until then the exit overlap only gives locked feedback.
+    if (this.puzzleState.switchesActivated >= this.puzzleState.requiredSwitchCount) {
+      this.puzzleState.unlocked = true;
+      this.updateDoorLockVisual();
+      this.showPuzzleMessage("Burial Gate unlocked", "#fff8de");
+      playSoundCue(this, "clear");
+      this.cameras.main.flash(160, 255, 238, 176);
+      return;
+    }
+
+    this.showPuzzleMessage(
+      `Seal ${this.puzzleState.switchesActivated}/${this.puzzleState.requiredSwitchCount} awakened`,
+      "#ffd27a"
+    );
+  }
+
+  playPuzzleSwitchSparkles(switchConfig) {
+    const centerX = switchConfig.x + switchConfig.width / 2;
+    const centerY = switchConfig.y + switchConfig.height / 2;
+
+    for (let sparkIndex = 0; sparkIndex < 6; sparkIndex += 1) {
+      const spark = this.add
+        .rectangle(centerX, centerY, 3, 3, sparkIndex % 2 === 0 ? 0xfff3bf : 0x8de6ff)
+        .setDepth(14);
+      const angle = (Math.PI * 2 * sparkIndex) / 6;
+
+      this.tweens.add({
+        targets: spark,
+        x: centerX + Math.cos(angle) * 13,
+        y: centerY + Math.sin(angle) * 9,
+        alpha: 0,
+        duration: 280,
+        ease: "Quad.Out",
+        onComplete: () => {
+          spark.destroy();
+        }
+      });
+    }
+  }
+
+  isExitLocked() {
+    return Boolean(this.puzzleState?.hasPuzzle && !this.puzzleState.unlocked);
   }
 
   drawSolidRect(graphics, rect) {
@@ -2356,7 +2580,78 @@ class GameScene extends Phaser.Scene {
       .setDepth(22)
       .setVisible(false);
 
+    this.createPuzzleHud();
     this.updateWetnessHud();
+  }
+
+  createPuzzleHud() {
+    if (!this.puzzleState?.hasPuzzle) {
+      this.puzzleCounterText = null;
+      this.puzzleMessageText = null;
+      return;
+    }
+
+    this.puzzleCounterText = this.add
+      .text(GAME_WIDTH - 12, 34, "", {
+        fontFamily: FONTS.ui,
+        fontSize: "10px",
+        color: COLORS.gold,
+        stroke: "#2c170b",
+        strokeThickness: 3
+      })
+      .setOrigin(1, 0)
+      .setDepth(22);
+
+    this.puzzleMessageY = 84;
+    this.puzzleMessageText = this.add
+      .text(GAME_WIDTH / 2, this.puzzleMessageY, "", {
+        fontFamily: FONTS.ui,
+        fontSize: "12px",
+        color: COLORS.gold,
+        stroke: "#2c170b",
+        strokeThickness: 4
+      })
+      .setOrigin(0.5)
+      .setDepth(23)
+      .setVisible(false);
+
+    this.updatePuzzleHud();
+  }
+
+  updatePuzzleHud() {
+    if (!this.puzzleCounterText || !this.puzzleState?.hasPuzzle) {
+      return;
+    }
+
+    this.puzzleCounterText.setText(
+      `SEALS ${this.puzzleState.switchesActivated}/${this.puzzleState.requiredSwitchCount}`
+    );
+  }
+
+  showPuzzleMessage(message, color = COLORS.gold) {
+    if (!this.puzzleMessageText) {
+      return;
+    }
+
+    this.tweens.killTweensOf(this.puzzleMessageText);
+    this.puzzleMessageText
+      .setText(message)
+      .setColor(color)
+      .setY(this.puzzleMessageY)
+      .setAlpha(1)
+      .setVisible(true);
+
+    this.tweens.add({
+      targets: this.puzzleMessageText,
+      y: this.puzzleMessageY - 7,
+      alpha: 0,
+      delay: 700,
+      duration: 460,
+      ease: "Quad.Out",
+      onComplete: () => {
+        this.puzzleMessageText.setVisible(false).setY(this.puzzleMessageY);
+      }
+    });
   }
 
   updateWetnessHud() {
@@ -2461,8 +2756,40 @@ class GameScene extends Phaser.Scene {
     });
   }
 
+  showLockedDoorFeedback() {
+    if (this.time.now - (this.lockedDoorFeedbackAt || 0) < 650) {
+      return;
+    }
+
+    this.lockedDoorFeedbackAt = this.time.now;
+    playSoundCue(this, "ui-hover");
+    this.cameras.main.shake(80, 0.002);
+    this.showPuzzleMessage(
+      `Gate sealed: ${this.puzzleState.switchesActivated}/${this.puzzleState.requiredSwitchCount} seals`,
+      "#ffd27a"
+    );
+
+    if (this.doorLockText) {
+      this.tweens.killTweensOf(this.doorLockText);
+      this.doorLockText.setAlpha(1);
+      this.tweens.add({
+        targets: this.doorLockText,
+        alpha: 0.45,
+        duration: 90,
+        yoyo: true,
+        repeat: 2
+      });
+    }
+  }
+
   handleGoalReached() {
     if (this.levelState !== "playing") {
+      return;
+    }
+
+    // Locked puzzle doors block level completion until the required plates are active.
+    if (this.isExitLocked()) {
+      this.showLockedDoorFeedback();
       return;
     }
 
