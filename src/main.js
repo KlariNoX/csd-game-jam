@@ -569,6 +569,10 @@ function drawPyramidInterior(scene) {
 
 function drawReportParchment(scene) {
   const graphics = scene.add.graphics();
+  const sheetX = 58;
+  const sheetY = 20;
+  const sheetWidth = 364;
+  const sheetHeight = 220;
 
   graphics.fillGradientStyle(
     COLORS.sandDark,
@@ -579,24 +583,77 @@ function drawReportParchment(scene) {
   );
   graphics.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-  graphics.fillStyle(0xefd49a, 1);
-  graphics.fillRoundedRect(54, 20, 372, 220, 12);
-  graphics.lineStyle(3, 0xb1844b, 1);
-  graphics.strokeRoundedRect(54, 20, 372, 220, 12);
+  graphics.fillStyle(0x1a0d05, 0.34);
+  graphics.fillRoundedRect(sheetX - 10, sheetY + 8, sheetWidth + 20, sheetHeight + 4, 8);
 
-  graphics.fillStyle(0xe0bf7d, 0.65);
-  graphics.fillRoundedRect(66, 30, 348, 200, 10);
+  graphics.fillStyle(0x8c5d2b, 1);
+  graphics.fillRoundedRect(sheetX - 13, sheetY + 6, 18, sheetHeight - 4, 8);
+  graphics.fillRoundedRect(sheetX + sheetWidth - 5, sheetY + 6, 18, sheetHeight - 4, 8);
+  graphics.fillStyle(0xd09a52, 0.55);
+  graphics.fillRect(sheetX - 9, sheetY + 16, 3, sheetHeight - 24);
+  graphics.fillRect(sheetX + sheetWidth + 4, sheetY + 16, 3, sheetHeight - 24);
+  graphics.lineStyle(2, 0x58361a, 0.8);
+  graphics.strokeRoundedRect(sheetX - 13, sheetY + 6, 18, sheetHeight - 4, 8);
+  graphics.strokeRoundedRect(sheetX + sheetWidth - 5, sheetY + 6, 18, sheetHeight - 4, 8);
 
-  graphics.fillStyle(0xc99853, 0.22);
-  graphics.fillCircle(108, 78, 24);
-  graphics.fillCircle(350, 88, 20);
-  graphics.fillCircle(314, 178, 26);
-  graphics.fillCircle(154, 188, 18);
+  graphics.fillGradientStyle(0xf6d99a, 0xe2b973, 0xd9a95e, 0xc88d47, 1);
+  graphics.fillRoundedRect(sheetX, sheetY, sheetWidth, sheetHeight, 5);
 
-  graphics.lineStyle(1, 0xb1844b, 0.5);
+  graphics.fillStyle(0xffedb8, 0.34);
+  graphics.fillRect(sheetX + 12, sheetY + 10, sheetWidth - 24, 24);
+  graphics.fillStyle(0xb87831, 0.16);
+  graphics.fillRect(sheetX + 12, sheetY + sheetHeight - 26, sheetWidth - 24, 18);
 
-  for (let y = 54; y <= 206; y += 28) {
-    graphics.lineBetween(82, y, 398, y);
+  const chipColor = COLORS.wallDark;
+  const chips = [
+    [72, 20, 9, 5], [126, 20, 13, 4], [205, 20, 8, 5], [278, 20, 12, 4],
+    [350, 20, 9, 5], [84, 235, 13, 5], [156, 235, 8, 4], [248, 235, 12, 5],
+    [334, 235, 9, 4], [58, 42, 5, 11], [58, 118, 5, 8], [58, 202, 5, 12],
+    [417, 70, 5, 10], [417, 142, 5, 12], [417, 210, 5, 8]
+  ];
+
+  graphics.fillStyle(chipColor, 0.86);
+  chips.forEach(([x, y, width, height]) => {
+    graphics.fillRect(x, y, width, height);
+  });
+
+  graphics.lineStyle(2, 0x8c5d2b, 0.9);
+  graphics.strokeRoundedRect(sheetX, sheetY, sheetWidth, sheetHeight, 5);
+  graphics.lineStyle(1, 0x6a3f18, 0.55);
+  graphics.strokeRoundedRect(sheetX + 8, sheetY + 8, sheetWidth - 16, sheetHeight - 16, 3);
+
+  graphics.fillStyle(0xb87831, 0.16);
+  graphics.fillCircle(110, 120, 28);
+  graphics.fillCircle(358, 114, 22);
+  graphics.fillCircle(318, 174, 26);
+  graphics.fillCircle(156, 194, 18);
+
+  graphics.lineStyle(1, 0x8f642f, 0.22);
+  for (let y = sheetY + 18; y < sheetY + sheetHeight - 12; y += 7) {
+    const inset = y % 3 === 0 ? 20 : 14;
+    graphics.lineBetween(sheetX + inset, y, sheetX + sheetWidth - inset, y);
+  }
+
+  graphics.lineStyle(1, 0xffefbf, 0.18);
+  for (let x = sheetX + 26; x < sheetX + sheetWidth - 20; x += 18) {
+    graphics.lineBetween(x, sheetY + 12, x - 6, sheetY + sheetHeight - 14);
+  }
+
+  graphics.fillStyle(0x9b713a, 0.22);
+  graphics.fillRoundedRect(68, 35, 344, 38, 3);
+  graphics.fillRoundedRect(74, 96, 332, 84, 3);
+  graphics.fillRoundedRect(74, 188, 332, 26, 3);
+
+  graphics.lineStyle(1, 0x7a5326, 0.55);
+  graphics.lineBetween(82, 82, 398, 82);
+  graphics.lineBetween(88, 184, 392, 184);
+
+  graphics.fillStyle(0x6a3f18, 0.32);
+  for (let y = 102; y <= 168; y += 22) {
+    graphics.fillTriangle(82, y, 90, y + 5, 82, y + 10);
+    graphics.fillRect(94, y + 3, 8, 2);
+    graphics.fillTriangle(398, y, 390, y + 5, 398, y + 10);
+    graphics.fillRect(378, y + 3, 8, 2);
   }
 
   return graphics;
@@ -653,6 +710,48 @@ function createTextButton(scene, x, y, label, onClick, width = 140) {
     });
 
   return button;
+}
+
+function createPapyrusActionText(scene, x, y, label, onClick, hitWidth = 130) {
+  const actionText = scene.add
+    .text(x, y, label, {
+      fontFamily: FONTS.title,
+      fontSize: "15px",
+      color: "#5b3314",
+      stroke: "#efcf8d",
+      strokeThickness: 1
+    })
+    .setOrigin(0.5)
+    .setDepth(20);
+  const underline = scene.add
+    .rectangle(x, y + 12, actionText.width + 12, 1, 0x6a3f18, 0.55)
+    .setDepth(19);
+  const hitZone = scene.add
+    .zone(x, y, hitWidth, 28)
+    .setOrigin(0.5)
+    .setInteractive({ useHandCursor: true })
+    .setDepth(21);
+
+  hitZone
+    .on("pointerover", () => {
+      actionText.setColor("#2f1b0a");
+      underline.setAlpha(0.95);
+      playSoundCue(scene, "ui-hover");
+    })
+    .on("pointerout", () => {
+      actionText.setColor("#5b3314");
+      underline.setAlpha(0.55);
+    })
+    .on("pointerdown", () => {
+      playSoundCue(scene, "ui-click");
+      actionText.setScale(0.97);
+      onClick();
+    })
+    .on("pointerup", () => {
+      actionText.setScale(1);
+    });
+
+  return actionText;
 }
 
 function addSceneTitle(scene, title, subtitle = "", subtitleY = 62) {
@@ -1137,43 +1236,46 @@ class ReportScene extends Phaser.Scene {
   create() {
     const levelIndex = getSelectedLevelIndex(this);
     const level = getCurrentLevel(this);
+    const reportLines = level.report.split("\n");
+    reportLines.shift();
+    const reportBody = reportLines.join("\n");
 
     drawReportParchment(this);
 
     this.add
-      .text(GAME_WIDTH / 2, 30, "Chamber Record", {
+      .text(GAME_WIDTH / 2, 42, "Chamber Record", {
         fontFamily: FONTS.title,
-        fontSize: "24px",
-        color: "#6a3f18",
-        stroke: "#f7e2b4",
-        strokeThickness: 3
+        fontSize: "22px",
+        color: "#5b3314",
+        stroke: "#efcf8d",
+        strokeThickness: 2
       })
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 52, `Level ${levelIndex + 1}: ${level.name}`, {
-        fontFamily: FONTS.title,
-        fontSize: "14px",
-        color: "#6a3f18"
-      })
-      .setOrigin(0.5);
-
-    this.add
-      .text(GAME_WIDTH / 2, 118, level.report, {
-        fontFamily: FONTS.title,
-        fontSize: "16px",
-        color: "#3e2713",
-        align: "center",
-        wordWrap: { width: 270 },
-        lineSpacing: 6
-      })
-      .setOrigin(0.5);
-
-    this.add
-      .text(GAME_WIDTH / 2, 196, "Press Space or click below to enter the chamber.", {
+      .text(GAME_WIDTH / 2, 66, `Level ${getRomanNumeral(levelIndex + 1)} - ${level.name}`, {
         fontFamily: FONTS.ui,
         fontSize: "11px",
-        color: "#5d4127"
+        color: "#5b3314"
+      })
+      .setOrigin(0.5);
+
+    this.add
+      .text(GAME_WIDTH / 2, 132, reportBody, {
+        fontFamily: FONTS.title,
+        fontSize: "13px",
+        color: "#3a210d",
+        align: "center",
+        wordWrap: { width: 308, useAdvancedWrap: true },
+        lineSpacing: 8
+      })
+      .setOrigin(0.5);
+
+    this.add
+      .text(GAME_WIDTH / 2, 201, "Press Space or click below to enter the chamber.", {
+        fontFamily: FONTS.ui,
+        fontSize: "11px",
+        color: "#684019"
       })
       .setOrigin(0.5);
 
@@ -1197,13 +1299,13 @@ class ReportScene extends Phaser.Scene {
       this.input.keyboard.off("keydown-SPACE", handleSpaceKey);
     });
 
-    createTextButton(this, 170, 228, "Back", () => {
+    createPapyrusActionText(this, 168, 218, "Back", () => {
       this.scene.start("LevelSelectScene");
-    }, 100);
+    }, 94);
 
-    createTextButton(this, 310, 228, "Enter Chamber", () => {
+    createPapyrusActionText(this, 312, 218, "Enter Chamber", () => {
       enterChamber();
-    }, 160);
+    }, 150);
 
     addCrtOverlay(this);
   }
