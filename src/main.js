@@ -32,6 +32,40 @@ const TRACK_URLS = [
   new URL("../assets/Track 4.mp3", import.meta.url).href,
   new URL("../assets/Track 5.mp3", import.meta.url).href
 ];
+const STORYBOARD_FRAMES = [
+  {
+    key: "storyboard-opening-1",
+    url: new URL("../assets/Storyboard01/Opening Frame 1.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-opening-2",
+    url: new URL("../assets/Storyboard01/Opening_Frame_2.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-opening-3",
+    url: new URL("../assets/Storyboard01/Opening_Frame_3.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-opening-4",
+    url: new URL("../assets/Storyboard01/Opening_Frame_4.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-opening-5",
+    url: new URL("../assets/Storyboard02/Opening_Frame_5.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-opening-6",
+    url: new URL("../assets/Storyboard02/Opening_Frame_6.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-opening-7",
+    url: new URL("../assets/Storyboard02/Opening_Frame_7.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-opening-8",
+    url: new URL("../assets/Storyboard02/Opening_Frame_8.png", import.meta.url).href
+  }
+];
 
 const COLORS = {
   sandDark: 0x7a5326,
@@ -853,13 +887,19 @@ function addCrtOverlay(scene) {
 function preloadImageIfNeeded(scene, key, url) {
   if (!scene.textures.exists(key)) {
     scene.load.image(key, url);
+    return true;
   }
+
+  return false;
 }
 
 function preloadAudioIfNeeded(scene, key, url) {
   if (!scene.cache.audio.exists(key)) {
     scene.load.audio(key, url);
+    return true;
   }
+
+  return false;
 }
 
 function preloadCrabSpritesheetIfNeeded(scene) {
@@ -868,7 +908,28 @@ function preloadCrabSpritesheetIfNeeded(scene) {
       frameWidth: CRAB_FRAME_SIZE,
       frameHeight: CRAB_FRAME_SIZE
     });
+    return true;
   }
+
+  return false;
+}
+
+function preloadMainMenuAssets(scene) {
+  let queuedAsset = false;
+
+  queuedAsset = preloadImageIfNeeded(
+    scene,
+    MAIN_MENU_BACKGROUND_KEY,
+    MAIN_MENU_BACKGROUND_URL
+  ) || queuedAsset;
+  queuedAsset = preloadCrabSpritesheetIfNeeded(scene) || queuedAsset;
+  queuedAsset = preloadAudioIfNeeded(scene, "bg-music", BG_MUSIC_URL) || queuedAsset;
+
+  TRACK_URLS.forEach((url, i) => {
+    queuedAsset = preloadAudioIfNeeded(scene, `track-${i + 1}`, url) || queuedAsset;
+  });
+
+  return queuedAsset;
 }
 
 function ensureCrabAnimations(scene) {
@@ -1054,31 +1115,215 @@ function createLevelNode(scene, x, y, levelIndex, unlocked, onSelect) {
   return node;
 }
 
+function createIntroElement(tagName, styles = {}, text = "") {
+  const element = document.createElement(tagName);
+
+  Object.assign(element.style, styles);
+
+  if (text) {
+    element.textContent = text;
+  }
+
+  return element;
+}
+
+function loadStoryboardImage(frame) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+
+    image.decoding = "async";
+    image.onload = () => {
+      resolve({ ...frame, image });
+    };
+    image.onerror = reject;
+    image.src = frame.url;
+  });
+}
+
+function showOpeningStoryboard(onComplete) {
+  let currentFrameIndex = 0;
+  let isFinished = false;
+  let isTransitioning = false;
+  let loadedFrames = [];
+  let transitionTimer = null;
+  let settleTimer = null;
+
+  const overlay = createIntroElement("div", {
+    position: "fixed",
+    inset: "0",
+    zIndex: "9999",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxSizing: "border-box",
+    padding: "24px",
+    background: "#120d07",
+    color: COLORS.white,
+    fontFamily: FONTS.ui,
+    opacity: "1",
+    transition: "opacity 180ms ease"
+  });
+  const imageStage = createIntroElement("div", {
+    width: "100%",
+    height: "100%",
+    minHeight: "0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  });
+  const imageFrame = createIntroElement("div", {
+    position: "relative",
+    display: "inline-flex",
+    maxWidth: "100%",
+    maxHeight: "100%",
+    boxSizing: "border-box",
+    background: "#fff0bf",
+    border: "4px solid #2c170b",
+    boxShadow: "0 10px 28px rgba(0, 0, 0, 0.5)",
+    overflow: "hidden",
+    opacity: "1",
+    transform: "translateX(0) scale(1)",
+    willChange: "opacity, transform"
+  });
+  const image = createIntroElement("img", {
+    maxWidth: "calc(100vw - 56px)",
+    maxHeight: "calc(100vh - 56px)",
+    display: "block",
+    objectFit: "contain",
+    imageRendering: "auto"
+  });
+  const promptText = createIntroElement("div", {
+    position: "absolute",
+    left: "50%",
+    bottom: "18px",
+    transform: "translateX(-50%)",
+    color: COLORS.white,
+    fontFamily: '"Courier New", monospace',
+    fontSize: "clamp(12px, 1.4vw, 18px)",
+    fontWeight: "700",
+    lineHeight: "1",
+    letterSpacing: "0",
+    pointerEvents: "none",
+    textAlign: "center",
+    textShadow:
+      "2px 0 #120d07, -2px 0 #120d07, 0 2px #120d07, 0 -2px #120d07, 2px 2px #120d07",
+    whiteSpace: "nowrap"
+  }, "Loading...");
+
+  imageFrame.append(image, promptText);
+  imageStage.appendChild(imageFrame);
+  overlay.appendChild(imageStage);
+  document.body.appendChild(overlay);
+
+  const cleanup = () => {
+    window.removeEventListener("keydown", handleKeyDown);
+    window.clearTimeout(transitionTimer);
+    window.clearTimeout(settleTimer);
+    overlay.remove();
+  };
+  const finishIntro = () => {
+    if (isFinished) {
+      return;
+    }
+
+    isFinished = true;
+    overlay.style.opacity = "0";
+    window.setTimeout(() => {
+      cleanup();
+      onComplete();
+    }, 180);
+  };
+  const updateFrameContent = () => {
+    const frame = loadedFrames[currentFrameIndex];
+
+    image.src = frame.image.src;
+    image.alt = `Opening storyboard panel ${currentFrameIndex + 1}`;
+    promptText.textContent =
+      currentFrameIndex === loadedFrames.length - 1
+        ? "Press SPACE to start"
+        : "Press SPACE for next image";
+  };
+  const showFrame = (direction = 1) => {
+    updateFrameContent();
+    imageFrame.style.transition = "none";
+    imageFrame.style.opacity = "0";
+    imageFrame.style.transform = `translateX(${28 * direction}px) scale(0.985)`;
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        imageFrame.style.transition = "opacity 240ms ease-out, transform 240ms ease-out";
+        imageFrame.style.opacity = "1";
+        imageFrame.style.transform = "translateX(0) scale(1)";
+        settleTimer = window.setTimeout(() => {
+          isTransitioning = false;
+        }, 240);
+      });
+    });
+  };
+  function advanceFrame() {
+    if (!loadedFrames.length || isTransitioning) {
+      return;
+    }
+
+    if (currentFrameIndex >= loadedFrames.length - 1) {
+      finishIntro();
+      return;
+    }
+
+    isTransitioning = true;
+    imageFrame.style.transition = "opacity 160ms ease-in, transform 160ms ease-in";
+    imageFrame.style.opacity = "0";
+    imageFrame.style.transform = "translateX(-28px) scale(0.985)";
+
+    transitionTimer = window.setTimeout(() => {
+      currentFrameIndex += 1;
+      showFrame(1);
+    }, 160);
+  }
+  function handleKeyDown(event) {
+    if (event.code !== "Space" || event.repeat) {
+      return;
+    }
+
+    event.preventDefault();
+    advanceFrame();
+  }
+
+  window.addEventListener("keydown", handleKeyDown);
+
+  Promise.all(STORYBOARD_FRAMES.map(loadStoryboardImage))
+    .then((frames) => {
+      loadedFrames = frames;
+      isTransitioning = true;
+      showFrame(1);
+    })
+    .catch(() => {
+      finishIntro();
+    });
+}
+
 class MainMenuScene extends Phaser.Scene {
   constructor() {
     super("MainMenuScene");
   }
 
   preload() {
-    const loadingText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, "Loading...", {
-      fontFamily: FONTS.title,
-      fontSize: "24px",
-      color: COLORS.white
-    }).setOrigin(0.5);
+    const loadingText = this.add
+      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, "Loading...", {
+        fontFamily: FONTS.title,
+        fontSize: "24px",
+        color: COLORS.white
+      })
+      .setOrigin(0.5);
+    const queuedAsset = preloadMainMenuAssets(this);
 
-    this.load.on('complete', () => {
-      if (loadingText) {
+    if (queuedAsset) {
+      this.load.once("complete", () => {
         loadingText.destroy();
-      }
-    });
-
-    preloadImageIfNeeded(this, MAIN_MENU_BACKGROUND_KEY, MAIN_MENU_BACKGROUND_URL);
-    preloadCrabSpritesheetIfNeeded(this);
-    preloadAudioIfNeeded(this, "bg-music", BG_MUSIC_URL);
-    
-    TRACK_URLS.forEach((url, i) => {
-      preloadAudioIfNeeded(this, `track-${i + 1}`, url);
-    });
+      });
+    } else {
+      loadingText.destroy();
+    }
   }
 
   create() {
@@ -2478,4 +2723,6 @@ const config = {
   ]
 };
 
-new Phaser.Game(config);
+showOpeningStoryboard(() => {
+  new Phaser.Game(config);
+});
