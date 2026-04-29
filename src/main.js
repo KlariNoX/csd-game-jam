@@ -213,9 +213,9 @@ const LEVELS = [
       // Sand Hall uses the background floor line at y=202, then steps upward to the sand lift.
       { x: 0, y: 202, width: 84, height: 38, style: "backgroundFloor" },
       { x: 102, y: 187, width: 58, height: 12, style: "warmSand" },
-      { x: 182, y: 169, width: 48, height: 12, style: "stone" },
+      { x: 182, y: 169, width: 48, height: 12, style: "ruinLedge" },
       { x: 288, y: 134, width: 64, height: 12, style: "ruinLedge" },
-      { x: 360, y: 164, width: 48, height: 12, style: "stone" },
+      { x: 360, y: 164, width: 48, height: 12, style: "ruinLedge" },
       { x: 420, y: 202, width: 60, height: 38, style: "backgroundFloor" }
     ],
     movingPlatforms: [
@@ -258,10 +258,10 @@ const LEVELS = [
     solids: [
       // Two box puzzle yards sit on the background floor, with an upper route unlocked by stacking movement.
       { x: 0, y: 202, width: 168, height: 38, style: "backgroundFloor" },
-      { x: 196, y: 184, width: 52, height: 12, style: "stone" },
+      { x: 196, y: 184, width: 52, height: 12, style: "ruinLedge" },
       { x: 226, y: 202, width: 118, height: 38, style: "backgroundFloor" },
       { x: 300, y: 132, width: 58, height: 12, style: "ruinLedge" },
-      { x: 356, y: 166, width: 42, height: 12, style: "stone" },
+      { x: 356, y: 166, width: 42, height: 12, style: "ruinLedge" },
       { x: 398, y: 202, width: 82, height: 38, style: "backgroundFloor" }
     ],
     boxes: [
