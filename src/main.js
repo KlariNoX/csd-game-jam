@@ -1972,7 +1972,7 @@ class SettingsScene extends Phaser.Scene {
       100
     );
 
-    createTextButton(this, GAME_WIDTH / 2, 184, "Quit", () => {
+    createTextButton(this, GAME_WIDTH / 2, 184, "Back", () => {
       this.scene.start("MainMenuScene");
     }, 110);
 
