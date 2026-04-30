@@ -6,6 +6,7 @@ const TOTAL_LEVELS = 5;
 const PROGRESS_STORAGE_KEY = "crab-out-of-nile-progress";
 const MAIN_MENU_BACKGROUND_KEY = "main-menu-background";
 const LEVEL_SELECT_BACKGROUND_KEY = "level-select-background";
+const ENDING_SCENE_BACKGROUND_KEY = "ending-scene-background";
 const CRAB_SPRITESHEET_KEY = "crab-sheet";
 const PYRAMID_TILEGROUND_KEY = "pyramid-tileground";
 const CRAB_FRAME_SIZE = 32;
@@ -19,6 +20,10 @@ const MAIN_MENU_BACKGROUND_URL = new URL(
 ).href;
 const LEVEL_SELECT_BACKGROUND_URL = new URL(
   "../assets/level_selector_background.png",
+  import.meta.url
+).href;
+const ENDING_SCENE_BACKGROUND_URL = new URL(
+  "../assets/Ending_Scene_Background.png",
   import.meta.url
 ).href;
 const CRAB_SPRITESHEET_URL = new URL(
@@ -93,6 +98,48 @@ const STORYBOARD_FRAMES = [
     url: new URL("../assets/Storyboard02/Opening_Frame_8.png", import.meta.url).href
   }
 ];
+const ENDING_STORYBOARD_FRAMES = [
+  {
+    key: "storyboard-ending-9",
+    url: new URL("../assets/Storyboard03/Opening_Frame_9.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-ending-10",
+    url: new URL("../assets/Storyboard03/Opening_Frame_10.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-ending-11",
+    url: new URL("../assets/Storyboard03/Opening_Frame_11.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-ending-12",
+    url: new URL("../assets/Storyboard03/Opening_Frame_12.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-ending-13",
+    url: new URL("../assets/Storyboard03/Opening_Frame_13.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-ending-14",
+    url: new URL("../assets/Storyboard03/Opening_Frame_14.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-ending-15",
+    url: new URL("../assets/Storyboard03/Opening_Frame_15.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-ending-16",
+    url: new URL("../assets/Storyboard03/Opening_Frame_16.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-ending-17",
+    url: new URL("../assets/Storyboard03/Opening_Frame_17.png", import.meta.url).href
+  },
+  {
+    key: "storyboard-ending-18",
+    url: new URL("../assets/Storyboard03/Opening_Frame_18.png", import.meta.url).href
+  }
+];
 
 const COLORS = {
   sandDark: 0x7a5326,
@@ -153,7 +200,7 @@ const LEVELS = [
   {
     name: "Burial Gate",
     report:
-      "Ancient Engineer Report #1:\nThe Burial Gate has two old glyph plates wired into the lock.\nWake both seals, then return to the exit door on the far right.",
+      "Ancient Engineer Report #1:\nThe gate is complete, except someone misplaced the first lock gear.\nI have wired two glyph plates around the room until it turns up.",
     startX: 34,
     startY: 198,
     goal: { x: 438, y: 124, width: 34, height: 83, kind: "door", label: "EXIT" },
@@ -194,7 +241,7 @@ const LEVELS = [
   {
     name: "Sand Hall",
     report:
-      "Ancient Engineer Report #2:\nThe Sand Hall lock listens for two sun seals.\nThe first seal is low and safe. The second waits past the old sand lift.",
+      "Ancient Engineer Report #2:\nNow the sun relay crystal is missing. Naturally.\nI placed two seals and a sand lift here, because apparently I must rebuild the temple with puzzles.",
     startX: 36,
     startY: 193,
     goal: { x: 430, y: 119, width: 34, height: 83, kind: "door", label: "EXIT" },
@@ -249,7 +296,7 @@ const LEVELS = [
   {
     name: "Stone Trial",
     report:
-      "Ancient Engineer Report #3:\nThe temple now tests practical intelligence.\nPush the marked stones onto seals, then use the second block as a step toward the upper scarab.",
+      "Ancient Engineer Report #3:\nThe pressure counterweight has vanished from its own labeled shelf.\nUse the stone blocks on the seals while I consider inventing a lock for the storage room.",
     startX: 36,
     startY: 193,
     goal: { x: 430, y: 119, width: 34, height: 83, kind: "door", label: "EXIT" },
@@ -295,7 +342,7 @@ const LEVELS = [
       {
     name: "Moon Shaft",
     report:
-      "Ancient Engineer Report #4:\nThe Moon Shaft still follows the old crusher path.\nTwo lunar seals have been added to the chamber lock.\nWake both seals, survive the shaft, then use the exit.",
+      "Ancient Engineer Report #4:\nThe lunar stabilizer is gone, and the crushers are behaving smugly about it.\nI added two moon seals to keep the shaft from collapsing. Please do not touch the crushers.",
     startX: 36,
     startY: 220,
     goal: { x: 430, y: 60, width: 54, height: 60, kind: "door", label: "EXIT" },
@@ -344,7 +391,7 @@ const LEVELS = [
     {
     name: "River Mouth",
     report:
-      "Ancient Engineer Report #5:\nThe chamber was rebuilt around scarab seals, spinning blades, and old stone blocks.\nWake the lower seal with a box, then use the second box to climb the upper route and unlock the exit.",
+      "Ancient Engineer Report #5:\nThe final scarab core is missing. Of course it is. Why would the final chamber have its final part?\nI set the seals, blocks, and blades myself. If this fails, I am blaming procurement.",
     startX: 34,
     startY: 181,
     goal: {
@@ -359,7 +406,7 @@ const LEVELS = [
       requiredSwitchCount: 2,
       switches: [
         // First seal must be held by the left box.
-        { id: "lower-box-seal", x: 108, y: 180, width: 32, height: 8, activation: "box" },
+        { id: "lower-box-seal", x: 108, y: 200, width: 32, height: 8, activation: "box" },
 
         // Second seal is reached through the upper blade route.
         { id: "upper-seal", x: 326, y: 114, width: 30, height: 8 }
@@ -407,8 +454,8 @@ const LEVELS = [
       { x: 350, y: 122, width: 12 },
 
       // Decorative unreachable ceiling spikes
-      { x: 62, y: 160, width: 58, direction: "down" },
-      { x: 185, y: 75, width: 40, direction: "down" }
+      //{ x: 62, y: 160, width: 58, direction: "down" },
+      { x: 190, y: 75, width: 35, direction: "down" }
     ],
     blades: [
       // Vertical blade guarding the first jump out of the left puzzle yard.
@@ -1573,6 +1620,19 @@ function addLevelSelectBackground(scene) {
     .setDepth(-7);
 }
 
+function addEndingSceneBackground(scene) {
+  addScaledBackgroundImage(scene, ENDING_SCENE_BACKGROUND_KEY, () => {
+    drawSky(scene);
+    drawStars(scene);
+
+    const river = scene.add.graphics().setDepth(-9);
+    river.fillStyle(COLORS.waterDeep, 1);
+    river.fillRect(0, 178, GAME_WIDTH, 92);
+    river.fillStyle(COLORS.water, 1);
+    river.fillRect(0, 178, GAME_WIDTH, 84);
+  });
+}
+
 function drawDashedLine(scene, startX, startY, endX, endY, color, alpha = 1) {
   const graphics = scene.add.graphics();
   const dashLength = 10;
@@ -1659,7 +1719,7 @@ function drawLevelSelectExit(scene, unlocked = false) {
     .on("pointerdown", () => {
       playSoundCue(scene, "ui-click");
       selectLevel(scene, TOTAL_LEVELS - 1);
-      scene.scene.start("WinScene");
+      playEndingStoryboardThenStartWin(scene);
     });
 }
 
@@ -1752,13 +1812,15 @@ function loadStoryboardImage(frame) {
   });
 }
 
-function showOpeningStoryboard(onComplete) {
+function showStoryboard(frames, onComplete, options = {}) {
   let currentFrameIndex = 0;
   let isFinished = false;
   let isTransitioning = false;
   let loadedFrames = [];
   let transitionTimer = null;
   let settleTimer = null;
+  const altPrefix = options.altPrefix || "Storyboard panel";
+  const lastPrompt = options.lastPrompt || "Press SPACE to start";
 
   const overlay = createIntroElement("div", {
     position: "fixed",
@@ -1869,10 +1931,10 @@ function showOpeningStoryboard(onComplete) {
     const frame = loadedFrames[currentFrameIndex];
 
     image.src = frame.image.src;
-    image.alt = `Opening storyboard panel ${currentFrameIndex + 1}`;
+    image.alt = `${altPrefix} ${currentFrameIndex + 1}`;
     promptText.textContent =
       currentFrameIndex === loadedFrames.length - 1
-        ? "Press SPACE to start"
+        ? lastPrompt
         : "Press SPACE for next image";
   };
   const showFrame = (direction = 1) => {
@@ -1931,7 +1993,7 @@ function showOpeningStoryboard(onComplete) {
 
   window.addEventListener("keydown", handleKeyDown);
 
-  Promise.all(STORYBOARD_FRAMES.map(loadStoryboardImage))
+  Promise.all(frames.map(loadStoryboardImage))
     .then((frames) => {
       loadedFrames = frames;
       isTransitioning = true;
@@ -1940,6 +2002,31 @@ function showOpeningStoryboard(onComplete) {
     .catch(() => {
       finishIntro();
     });
+}
+
+function showOpeningStoryboard(onComplete) {
+  showStoryboard(STORYBOARD_FRAMES, onComplete, {
+    altPrefix: "Opening storyboard panel",
+    lastPrompt: "Press SPACE to start"
+  });
+}
+
+function showEndingStoryboard(onComplete) {
+  showStoryboard(ENDING_STORYBOARD_FRAMES, onComplete, {
+    altPrefix: "Ending storyboard panel",
+    lastPrompt: "Press SPACE to continue"
+  });
+}
+
+function playEndingStoryboardThenStartWin(scene) {
+  if (scene.endingStoryboardStarting) {
+    return;
+  }
+
+  scene.endingStoryboardStarting = true;
+  showEndingStoryboard(() => {
+    scene.scene.start("WinScene");
+  });
 }
 
 class MainMenuScene extends Phaser.Scene {
@@ -3730,7 +3817,7 @@ class GameScene extends Phaser.Scene {
 
     this.time.delayedCall(720, () => {
       if (this.currentLevelIndex === TOTAL_LEVELS - 1) {
-        this.scene.start("WinScene");
+        playEndingStoryboardThenStartWin(this);
         return;
       }
 
@@ -4030,6 +4117,14 @@ class WinScene extends Phaser.Scene {
     super("WinScene");
   }
 
+  preload() {
+    preloadImageIfNeeded(
+      this,
+      ENDING_SCENE_BACKGROUND_KEY,
+      ENDING_SCENE_BACKGROUND_URL
+    );
+  }
+
   create() {
     const currentLevelIndex = getSelectedLevelIndex(this);
     const highestUnlockedLevel = getHighestUnlockedLevel(this);
@@ -4040,18 +4135,7 @@ class WinScene extends Phaser.Scene {
 
     playBackgroundMusic(this, "bg-music");
 
-    drawSky(this);
-    drawStars(this);
-
-    const river = this.add.graphics();
-    river.fillStyle(COLORS.waterDeep, 1);
-    river.fillRect(0, 178, GAME_WIDTH, 92);
-    river.fillStyle(COLORS.water, 1);
-    river.fillRect(0, 178, GAME_WIDTH, 84);
-
-    this.add.ellipse(96, 150, 40, 16, COLORS.crab, 1);
-    this.add.rectangle(340, 154, 34, 70, 0xd6c394, 1);
-    this.add.triangle(340, 118, 322, 152, 358, 152, 340, 96, 0xb59a67, 1);
+    addEndingSceneBackground(this);
 
     createPanel(this, 44, 40, 392, 118);
     addSceneTitle(this, "You Win", `Level ${currentLevelIndex + 1} clear`);
@@ -4060,7 +4144,7 @@ class WinScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         108,
-        "The crab reached the Nile.\nSomewhere, a mummy is still very confused in the ocean.",
+        "The crab reached the Nile...\nbut luck had other tanks in mind. Meanwhile a mummy\n at the bottom of the North Atlantic is still\n very confused.",
         {
           ...LABEL_STYLE,
           align: "center"
