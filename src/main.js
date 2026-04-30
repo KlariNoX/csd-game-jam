@@ -199,42 +199,51 @@ const LEVELS = [
     startY: 193,
     goal: { x: 430, y: 119, width: 34, height: 83, kind: "door", label: "EXIT" },
     puzzle: {
-      requiredSwitchCount: 2,
+      requiredSwitchCount: 1,
       switches: [
-        // Low seal introduces the Level 2 objective without pressure.
-        { id: "low-sun-seal", x: 116, y: 180, width: 30, height: 8 },
-        // High seal asks the player to use the moving sand lift and avoid the edge spikes.
-        { id: "high-scarab-seal", x: 300, y: 127, width: 30, height: 8 }
+        // // Low seal introduces the Level 2 objective without pressure.
+        { id: "low-sun-seal", x: 0, y: 42, width: 30, height: 8 },
+        // // High seal asks the player to use the moving sand lift and avoid the edge spikes.
+        // { id: "high-scarab-seal", x: 300, y: 127, width: 30, height: 8 }
       ]
     },
     decorations: [
-      { type: "sandPit", x: 84, y: 202, width: 76, height: 68 },
-      { type: "sandPit", x: 226, y: 202, width: 88, height: 68 },
-      // A higher false ledge with hanging spikes makes Sand Hall feel layered but stays off-route.
-      { type: "ceilingLedge", x: 36, y: 100, width: 92, height: 12 }
+      // { type: "sandPit", x: 84, y: 202, width: 76, height: 68 },
+      // { type: "sandPit", x: 226, y: 202, width: 88, height: 68 },
+      // // A higher false ledge with hanging spikes makes Sand Hall feel layered but stays off-route.
+      // { type: "ceilingLedge", x: 36, y: 100, width: 92, height: 12 }
     ],
     solids: [
-      // Sand Hall uses the background floor line at y=202, then steps upward to the sand lift.
-      { x: 0, y: 202, width: 84, height: 38, style: "backgroundFloor" },
-      { x: 102, y: 187, width: 58, height: 12, style: "warmSand" },
-      { x: 182, y: 169, width: 48, height: 12, style: "ruinLedge" },
-      { x: 288, y: 134, width: 64, height: 12, style: "ruinLedge" },
-      { x: 360, y: 164, width: 48, height: 12, style: "ruinLedge" },
-      { x: 420, y: 202, width: 60, height: 38, style: "backgroundFloor" }
+      { x: 0, y: 202, width: 130, height: 58, style: "backgroundFloor" },
+      { x: 104, y: 142, width: 58, height: 12, style: "ruinLedge" },
+      { x: 0, y: 102, width: 58, height: 12, style: "ruinLedge" },
+      { x: 0, y: 50, width: 25, height: 12, style: "ruinLedge" },
+      { x: 224, y: 202, width: 140, height: 58, style: "ruinLedge" },
+      { x: 430, y: 202, width: 50, height: 58, style: "backgroundFloor" },
+      // { x: 360, y: 164, width: 48, height: 12, style: "ruinLedge" },
+      // { x: 420, y: 202, width: 60, height: 38, style: "backgroundFloor" }
     ],
     movingPlatforms: [
       // The sand lift crosses the central pit slowly enough for a beginner to read and ride.
-      { x: 234, y: 169, width: 46, height: 10, fromX: 232, toX: 280, duration: 2600 }
+      // { x: 234, y: 169, width: 46, height: 10, fromX: 232, toX: 280, duration: 2600 }
     ],
     spikes: [
       // Short floor clusters mark the gaps without punishing the spawn.
-      { x: 84, y: 202, width: 20 },
-      { x: 160, y: 202, width: 20 },
-      { x: 248, y: 202, width: 28 },
-      { x: 314, y: 202, width: 22 },
-      // This small platform-edge trap adds risk near the second seal while leaving a safe landing zone.
-      { x: 334, y: 134, width: 18 },
-      { x: 52, y: 112, width: 62, direction: "down" }
+      { x: 84, y: 202, width: 40 },
+      // { x: 160, y: 202, width: 20 },
+      // { x: 248, y: 202, width: 28 },
+      // { x: 314, y: 202, width: 22 },
+      // // This small platform-edge trap adds risk near the second seal while leaving a safe landing zone.
+      // { x: 334, y: 134, width: 18 },
+      // { x: 52, y: 112, width: 62, direction: "down" }
+    ],
+    blades: [
+      // Vertical blade guarding the first jump out of the left puzzle yard.
+      { x1: 194, y1: 54, x2: 194, y2: 194, radius: 10, duration: 1700, phase: 180, broken: false },
+      { x1: 0, y1: 86, x2: 58, y2: 86, radius: 10, duration: 1700, phase: 180, broken: false },
+
+      // Horizontal blade pressuring the upper route near the second seal.
+      { x1: 224, y1: 184, x2: 224+140, y2: 184, radius: 10, duration: 1900, phase: 520, broken: false }
     ]
   },
   {
