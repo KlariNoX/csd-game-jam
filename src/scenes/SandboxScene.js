@@ -12,7 +12,7 @@ import {
   RUIN_PLATFORM_FRAMES
 } from '../config/constants.js';
 import { playBackgroundMusic, playSoundCue } from '../systems/audio.js';
-import { addCrtOverlay, addSceneTitle, createTextButton } from '../ui/buttons.js';
+import { addCrtOverlay, addSceneTitle, createTextButton, drawPixelDialogFrame } from '../ui/buttons.js';
 import {
   addLevelBackground,
   ensureCrabAnimations,
@@ -37,6 +37,7 @@ export class SandboxScene extends Phaser.Scene {
     playBackgroundMusic(this, "bg-music");
     ensureCrabAnimations(this);
 
+    this.practiceStarted = false;
     this.facingDirection = 1;
     this.staticSolids = [];
     this.movingPlatforms = [];
@@ -49,6 +50,111 @@ export class SandboxScene extends Phaser.Scene {
     this.add
       .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x120d07, 0.2)
       .setDepth(-7);
+
+    this.showSandboxMenuPopup();
+    addCrtOverlay(this);
+  }
+
+  showSandboxMenuPopup() {
+    const panelWidth = 420;
+    const panelHeight = 214;
+    const panelX = (GAME_WIDTH - panelWidth) / 2;
+    const panelY = (GAME_HEIGHT - panelHeight) / 2;
+    const centerX = GAME_WIDTH / 2;
+    const popupObjects = [];
+    const blocker = this.add
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x070302, 0.72)
+      .setDepth(80)
+      .setInteractive();
+
+    popupObjects.push(blocker);
+    popupObjects.push(drawPixelDialogFrame(this, panelX, panelY, panelWidth, panelHeight));
+
+    const titlePlate = this.add.graphics().setDepth(91);
+    titlePlate.fillStyle(0x090403, 1);
+    titlePlate.fillRect(centerX - 98, panelY + 20, 196, 40);
+    titlePlate.fillStyle(0x5c3218, 1);
+    titlePlate.fillRect(centerX - 90, panelY + 26, 180, 28);
+    titlePlate.fillStyle(COLOR_VALUES.gold, 1);
+    titlePlate.fillRect(centerX - 84, panelY + 29, 168, 3);
+    titlePlate.fillRect(centerX - 84, panelY + 50, 168, 3);
+    titlePlate.fillStyle(0xffefad, 0.34);
+    titlePlate.fillRect(centerX - 74, panelY + 33, 148, 1);
+    popupObjects.push(titlePlate);
+
+    const title = this.add
+      .text(centerX, panelY + 41, "Sandbox", {
+        fontFamily: FONTS.title,
+        fontSize: "22px",
+        color: COLORS.gold,
+        stroke: "#120905",
+        strokeThickness: 4
+      })
+      .setOrigin(0.5)
+      .setDepth(94);
+    const body = this.add
+      .text(centerX, panelY + 98, "Choose a sandbox mode.", {
+        ...LABEL_STYLE,
+        align: "center",
+        fontSize: "13px",
+        color: "#fff4d0",
+        wordWrap: { width: 260, useAdvancedWrap: true }
+      })
+      .setOrigin(0.5)
+      .setDepth(94);
+    const notePlate = this.add.graphics().setDepth(91);
+
+    notePlate.fillStyle(0x090403, 1);
+    notePlate.fillRect(centerX - 132, panelY + 124, 264, 34);
+    notePlate.fillStyle(0x3c1b0d, 1);
+    notePlate.fillRect(centerX - 126, panelY + 130, 252, 22);
+    notePlate.fillStyle(0x5c3218, 0.82);
+    notePlate.fillRect(centerX - 122, panelY + 134, 244, 14);
+    notePlate.fillStyle(COLOR_VALUES.gold, 0.74);
+    notePlate.fillRect(centerX - 118, panelY + 132, 236, 2);
+
+    const note = this.add
+      .text(centerX, panelY + 141, "Practice does not affect progress.", {
+        fontFamily: FONTS.ui,
+        fontSize: "10px",
+        color: "#ffe09a"
+      })
+      .setOrigin(0.5)
+      .setDepth(94);
+
+    popupObjects.push(title, body, notePlate, note);
+
+    const closePopup = () => {
+      popupObjects.forEach((object) => object.destroy());
+      this.sandboxMenuPopupObjects = [];
+    };
+
+    const myLevelsButton = createTextButton(this, centerX - 138, panelY + 188, "My Levels", () => {
+      // Placeholder for custom levels. The button is intentionally present but inactive for now.
+    }, 112, { variant: "secondary" }).setDepth(96);
+    const practiceButton = createTextButton(this, centerX, panelY + 188, "Practice", () => {
+      closePopup();
+      this.startPracticeLevel();
+    }, 112, { variant: "danger" }).setDepth(96);
+    const backButton = createTextButton(this, centerX + 138, panelY + 188, "Back", () => {
+      this.scene.start("MainMenuScene");
+    }, 104, { variant: "secondary" }).setDepth(96);
+
+    popupObjects.push(myLevelsButton, practiceButton, backButton);
+    this.sandboxMenuPopupObjects = popupObjects;
+  }
+
+  startPracticeLevel() {
+    if (this.practiceStarted) {
+      return;
+    }
+
+    this.practiceStarted = true;
+    this.facingDirection = 1;
+    this.staticSolids = [];
+    this.movingPlatforms = [];
+    this.ridingMovingPlatform = null;
+
     addSceneTitle(this, "Sandbox", "Practice movement without progress or timers", 56);
 
     createTextButton(this, 408, 24, "Main Menu", () => {
@@ -79,8 +185,6 @@ export class SandboxScene extends Phaser.Scene {
         fontSize: "12px"
       })
       .setDepth(20);
-
-    addCrtOverlay(this);
   }
 
   createSandboxLayout() {
@@ -493,6 +597,10 @@ export class SandboxScene extends Phaser.Scene {
   }
 
   update(_, delta) {
+    if (!this.practiceStarted || !this.player) {
+      return;
+    }
+
     this.updateMovingPlatforms(this.time.now, delta);
     this.updatePlayerMovement();
     this.updatePlayerAnimation(this.time.now);

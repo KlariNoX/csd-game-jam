@@ -230,7 +230,7 @@ export function createInfoButton(scene, x, y, onClick) {
   const button = scene.add.container(x, y).setDepth(42);
   const background = scene.add.graphics();
   const icon = scene.add
-    .text(0, -1, "i", {
+    .text(0.5, 0, "i", {
       fontFamily: '"Courier New", monospace',
       fontSize: "22px",
       fontStyle: "bold",
@@ -503,6 +503,19 @@ function drawInfoKeycap(scene, objects, x, y, label, width = 34) {
 function drawInfoRuinLedge(scene, objects, x, y) {
   const graphics = scene.add.graphics().setDepth(95);
 
+  // Small supports make the guide sample match the in-level ruin ledges better.
+  graphics.fillStyle(0x3c2518, 0.88);
+  graphics.fillRect(x - 19, y + 14, 9, 16);
+  graphics.fillRect(x + 15, y + 14, 9, 16);
+  graphics.fillStyle(COLORS.wallLight, 0.38);
+  graphics.fillRect(x - 17, y + 17, 5, 10);
+  graphics.fillRect(x + 17, y + 17, 5, 10);
+  graphics.fillStyle(COLORS.bronzeDark, 0.9);
+  graphics.fillRect(x - 21, y + 12, 13, 3);
+  graphics.fillRect(x + 13, y + 12, 13, 3);
+  graphics.fillRect(x - 21, y + 28, 13, 3);
+  graphics.fillRect(x + 13, y + 28, 13, 3);
+
   graphics.fillStyle(0x3c2518, 0.82);
   graphics.fillRect(x - 28, y + 7, 64, 7);
   graphics.fillStyle(0x8b5630, 0.92);
@@ -514,6 +527,15 @@ function drawInfoRuinLedge(scene, objects, x, y) {
   if (!scene.textures.exists(PYRAMID_TILEGROUND_KEY)) {
     return;
   }
+
+  [x - 20, x + 16].forEach((pillarX) => {
+    objects.push(
+      scene.add
+        .image(pillarX, y + 12, PYRAMID_TILEGROUND_KEY, 22)
+        .setOrigin(0)
+        .setDepth(95)
+    );
+  });
 
   const frames = [
     RUIN_PLATFORM_FRAMES.left,
@@ -530,6 +552,40 @@ function drawInfoRuinLedge(scene, objects, x, y) {
         .setDepth(96)
     );
   });
+}
+
+function drawInfoPillar(scene, objects, x, y) {
+  if (scene.textures.exists(PYRAMID_TILEGROUND_KEY)) {
+    [22, 34, 58].forEach((frame, index) => {
+      objects.push(
+        scene.add
+          .image(x - 8, y - 21 + index * 13, PYRAMID_TILEGROUND_KEY, frame)
+          .setOrigin(0)
+          .setScale(0.82)
+          .setDepth(96)
+      );
+    });
+    return;
+  }
+
+  const pillar = scene.add.graphics().setDepth(95);
+
+  pillar.fillStyle(0x2c170b, 0.74);
+  pillar.fillRect(x - 11, y - 19, 22, 40);
+  pillar.fillStyle(COLORS.wallMid, 1);
+  pillar.fillRect(x - 7, y - 18, 14, 38);
+  pillar.fillStyle(COLORS.wallLight, 0.45);
+  pillar.fillRect(x - 4, y - 14, 4, 28);
+  pillar.fillStyle(COLORS.bronzeDark, 1);
+  pillar.fillRect(x - 11, y - 21, 22, 5);
+  pillar.fillRect(x - 10, y + 17, 20, 5);
+  pillar.fillStyle(COLOR_VALUES.gold, 0.46);
+  pillar.fillRect(x - 5, y - 18, 10, 1);
+  pillar.fillRect(x - 5, y + 14, 10, 1);
+  pillar.lineStyle(1, COLORS.wallDark, 0.85);
+  pillar.strokeRect(x - 7, y - 18, 14, 38);
+
+  objects.push(pillar);
 }
 
 function drawInfoBlade(scene, objects, x, y) {
@@ -610,9 +666,33 @@ function drawInfoStoneBlock(scene, objects, x, y) {
   objects.push(block);
 }
 
+function drawInfoCrusher(scene, objects, x, y) {
+  const crusher = scene.add.graphics().setDepth(95);
+
+  crusher.fillStyle(COLORS.wallDark, 1);
+  crusher.fillRect(x - 31, y - 22, 5, 39);
+  crusher.fillRect(x + 26, y - 22, 5, 39);
+  crusher.fillRect(x - 31, y - 22, 62, 6);
+  crusher.fillStyle(COLORS.stone, 1);
+  crusher.fillRect(x - 23, y - 12, 46, 20);
+  crusher.fillStyle(COLORS.wallLight, 0.24);
+  crusher.fillRect(x - 19, y - 8, 38, 5);
+  crusher.lineStyle(2, COLORS.wallDark, 0.95);
+  crusher.strokeRect(x - 23, y - 12, 46, 20);
+  crusher.fillStyle(COLORS.danger, 0.65);
+  crusher.fillRect(x - 18, y + 16, 36, 3);
+
+  objects.push(crusher);
+}
+
 function drawInfoObjectSample(scene, objects, type, x, y) {
   if (type === "ledge") {
     drawInfoRuinLedge(scene, objects, x, y);
+    return;
+  }
+
+  if (type === "pillar") {
+    drawInfoPillar(scene, objects, x, y);
     return;
   }
 
@@ -628,6 +708,11 @@ function drawInfoObjectSample(scene, objects, type, x, y) {
 
   if (type === "seal") {
     drawInfoSealPlate(scene, objects, x, y);
+    return;
+  }
+
+  if (type === "crusher") {
+    drawInfoCrusher(scene, objects, x, y);
     return;
   }
 
@@ -1102,7 +1187,9 @@ export function showInfoDialog(scene) {
   ];
   const objectRows = [
     ["ledge", "Ruin Ledge", "Solid stone platform. Stand on it, jump from it."],
+    ["pillar", "Pillar", "Tall stone support. It blocks paths and gives ledges structure."],
     ["blade", "Blade", "Moving metal hazard. Touching it restarts the room."],
+    ["crusher", "Crusher", "Timed stone press. Move through after it rises."],
     ["movingPlatform", "Moving Platform", "Ride it across gaps or up shafts."],
     ["seal", "Seal Plate", "Wake enough seals to open locked chamber doors."],
     ["block", "Stone Block", "Push it onto box-only seals or use it as a step."]
@@ -1148,6 +1235,16 @@ export function showInfoDialog(scene) {
   contentFrame.lineStyle(2, 0x2a1409, 1);
   contentFrame.strokeRect(contentBounds.x, contentBounds.y, contentBounds.width, contentBounds.height);
   dialogObjects.push(contentFrame);
+
+  const contentMaskGraphics = scene.make.graphics({ add: false });
+  contentMaskGraphics.fillStyle(0xffffff, 1);
+  contentMaskGraphics.fillRect(
+    contentBounds.x + 2,
+    contentBounds.y + 2,
+    contentBounds.width - 4,
+    contentBounds.height - 4
+  );
+  const contentMask = contentMaskGraphics.createGeometryMask();
 
   const createTabButton = (x, y, width, label, tab) => {
     const height = 30;
@@ -1223,7 +1320,8 @@ export function showInfoDialog(scene) {
       ...style
     })
   );
-  const getObjectMaxScroll = () => Math.max(0, objectRows.length * 38 - (contentBounds.height - 12));
+  const objectRowHeight = 56;
+  const getObjectMaxScroll = () => Math.max(0, objectRows.length * objectRowHeight - (contentBounds.height - 12));
   const drawControls = () => {
     const rowGap = 34;
 
@@ -1259,7 +1357,7 @@ export function showInfoDialog(scene) {
     const trackX = contentBounds.x + contentBounds.width - 9;
     const trackY = contentBounds.y + 8;
     const trackHeight = contentBounds.height - 16;
-    const thumbHeight = Math.max(18, Math.floor((contentBounds.height / (objectRows.length * 38)) * trackHeight));
+    const thumbHeight = Math.max(18, Math.floor((contentBounds.height / (objectRows.length * objectRowHeight)) * trackHeight));
     const thumbY = trackY + Math.floor((objectScroll / maxScroll) * (trackHeight - thumbHeight));
     const scrollGraphics = scene.add.graphics().setDepth(96);
 
@@ -1272,10 +1370,8 @@ export function showInfoDialog(scene) {
     contentObjects.push(scrollGraphics);
   };
   const drawObjects = () => {
-    const rowHeight = 38;
-
     objectRows.forEach(([type, name, description], index) => {
-      const y = contentBounds.y + 20 + index * rowHeight - objectScroll;
+      const y = contentBounds.y + 20 + index * objectRowHeight - objectScroll;
 
       if (y < contentBounds.y + 10 || y > contentBounds.y + contentBounds.height - 14) {
         return;
@@ -1307,6 +1403,10 @@ export function showInfoDialog(scene) {
       objectScroll = Phaser.Math.Clamp(objectScroll, 0, getObjectMaxScroll());
       drawObjects();
     }
+
+    contentObjects.forEach((object) => {
+      object.setMask(contentMask);
+    });
   };
   function switchTab(tab) {
     activeTab = tab;
@@ -1338,6 +1438,8 @@ export function showInfoDialog(scene) {
     scene.events.off("shutdown", closeDialog);
     contentObjects.forEach((object) => object.destroy());
     dialogObjects.forEach((object) => object.destroy());
+    contentMask.destroy();
+    contentMaskGraphics.destroy();
     scene.infoDialogObjects = [];
   };
   const closeButton = createTextButton(scene, centerX, panelY + 236, "Close", closeDialog, 126)

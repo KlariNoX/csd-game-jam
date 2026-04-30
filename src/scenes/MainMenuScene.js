@@ -70,12 +70,12 @@ export class MainMenuScene extends Phaser.Scene {
       this.scene.start("LevelSelectScene");
     }, 158);
 
-    createTextButton(this, 150, 134, "Sandbox", () => {
-      this.scene.start("SandboxScene");
+    createTextButton(this, 150, 134, "New Game", () => {
+      showNewGameConfirmation(this);
     }, 158);
 
-    createTextButton(this, 150, 172, "New Game", () => {
-      showNewGameConfirmation(this);
+    createTextButton(this, 150, 172, "Sandbox", () => {
+      this.scene.start("SandboxScene");
     }, 158);
 
     createTextButton(this, 150, 210, "Settings", () => {
