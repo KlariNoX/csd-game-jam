@@ -332,35 +332,81 @@ const LEVELS = [
       { x: 69, y: 187, width: 34, direction: "down" }
     ]
   },
-  {
+    {
     name: "River Mouth",
     report:
-      "Ancient Engineer Report #5:\nWe used the leftover spikes, one blade, and a fake lava trench.\nThen we ran out of doors.\nThe huge opening on the right is not a trick. Just leave.",
+      "Ancient Engineer Report #5:\nThe chamber was rebuilt around scarab seals, spinning blades, and old stone blocks.\nWake the lower seal with a box, then use the second box to climb the upper route and unlock the exit.",
     startX: 34,
-    startY: 220,
+    startY: 181,
     goal: {
-      x: 410,
-      y: 122,
-      width: 48,
-      height: 110,
-      kind: "river",
-      label: "NILE"
+      x: 430,
+      y: 119,
+      width: 34,
+      height: 83,
+      kind: "door",
+      label: "EXIT"
     },
-    solids: [
-      { x: 0, y: 232, width: 84, height: 38, style: "stone" },
-      { x: 98, y: 198, width: 72, height: 12, style: "safe" },
-      { x: 188, y: 176, width: 68, height: 12, style: "stone" },
-      { x: 286, y: 216, width: 66, height: 18, style: "warmSand" },
-      { x: 370, y: 188, width: 42, height: 12, style: "stone" },
-      { x: 404, y: 232, width: 76, height: 38, style: "stone" }
+    puzzle: {
+      requiredSwitchCount: 2,
+      switches: [
+        // First seal must be held by the left box.
+        { id: "lower-box-seal", x: 108, y: 180, width: 32, height: 8, activation: "box" },
+
+        // Second seal is reached through the upper blade route.
+        { id: "upper-seal", x: 326, y: 114, width: 30, height: 8 }
+      ]
+    },
+    decorations: [
+      { type: "sandPit", x: 150, y: 190, width: 26, height: 80 },
+      { type: "sandPit", x: 258, y: 190, width: 28, height: 80 },
+      { type: "sandPit", x: 366, y: 190, width: 30, height: 80 },
+
+      // Atmosphere only
+      { type: "ceilingLedge", x: 48, y: 48, width: 84, height: 12 }
     ],
-    spikes: [{ x: 84, y: 232, width: 94 }],
-    lavaPools: [
-      { x: 256, y: 232, width: 30, height: 38 },
-      { x: 352, y: 232, width: 18, height: 38 }
+    solids: [
+      // Raised floor segments so the level plays higher on the screen.
+      { x: 0, y: 215, width: 150, height: 50, style: "backgroundFloor" },
+      { x: 176, y: 215, width: 82, height: 50, style: "backgroundFloor" },
+      { x: 286, y: 215, width: 80, height: 50, style: "backgroundFloor" },
+      { x: 396, y: 215, width: 84, height: 50, style: "backgroundFloor" },
+
+      // Custom-asset platforms
+      { x: 286, y: 42, width: 86, height: 12, style: "ruinLedge" },
+      { x: 186, y: 64, width: 35, height: 12, style: "ruinLedge" },
+      { x: 56, y: 148, width: 80, height: 12, style: "ruinLedge" },
+      { x: 206, y: 152, width: 48, height: 12, style: "ruinLedge" },
+      { x: 268, y: 136, width: 46, height: 12, style: "ruinLedge" },
+      { x: 318, y: 122, width: 46, height: 12, style: "ruinLedge" },
+      { x: 378, y: 156, width: 40, height: 12, style: "ruinLedge" }
+    ],
+    boxes: [
+      // Used for the lower box-only seal.
+      { id: "seal-box", x: 54, y: 172, width: 20, height: 18, bounds: { minX: 20, maxX: 146 } },
+
+      // Used as a climbing step in the center section.
+      { id: "step-box", x: 196, y: 172, width: 20, height: 18, bounds: { minX: 176, maxX: 256 } }
+    ],
+    spikes: [
+      // Lower route hazards
+      { x: 151, y: 190, width: 24 },
+      { x: 261, y: 190, width: 24 },
+      { x: 369, y: 190, width: 24 },
+
+      // Small upper-route punishers
+      { x: 302, y: 136, width: 12 },
+      { x: 350, y: 122, width: 12 },
+
+      // Decorative unreachable ceiling spikes
+      { x: 62, y: 160, width: 58, direction: "down" },
+      { x: 185, y: 75, width: 40, direction: "down" }
     ],
     blades: [
-      { x1: 222, y1: 144, x2: 222, y2: 198, radius: 10, duration: 1600, phase: 320, broken: false }
+      // Vertical blade guarding the first jump out of the left puzzle yard.
+      { x1: 164, y1: 154, x2: 164, y2: 196, radius: 10, duration: 1700, phase: 180, broken: false },
+
+      // Horizontal blade pressuring the upper route near the second seal.
+      { x1: 286, y1: 108, x2: 346, y2: 108, radius: 10, duration: 1900, phase: 520, broken: false }
     ]
   }
 ];
