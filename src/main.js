@@ -1540,7 +1540,7 @@ function drawDashedLine(scene, startX, startY, endX, endY, color, alpha = 1) {
   return graphics;
 }
 
-function drawLevelSelectExit(scene) {
+function drawLevelSelectExit(scene, unlocked = false) {
   const graphics = scene.add.graphics();
   const exitOuterRadius = 18;
   const exitInnerRadius = 10;
@@ -1560,10 +1560,52 @@ function drawLevelSelectExit(scene) {
     .text(shaftX, shaftY - 28, "EXIT SHAFT", {
       fontFamily: FONTS.ui,
       fontSize: "11px",
-      color: COLORS.white
+      color: unlocked ? COLORS.white : "#b59a7b"
     })
     .setOrigin(0.5)
     .setDepth(12);
+
+  if (!unlocked) {
+    return;
+  }
+
+  const hitZone = scene.add
+    .zone(shaftX, shaftY, exitOuterRadius * 2 + 10, exitOuterRadius * 2 + 10)
+    .setOrigin(0.5)
+    .setInteractive({ useHandCursor: true })
+    .setDepth(13);
+
+  hitZone
+    .on("pointerover", () => {
+      graphics.clear();
+      graphics.fillStyle(0x090403, 0.65);
+      graphics.fillCircle(shaftX + 2, shaftY + 2, exitOuterRadius + 2);
+      graphics.fillStyle(COLORS.wallDark, 0.96);
+      graphics.fillCircle(shaftX, shaftY, exitOuterRadius + 2);
+      graphics.fillStyle(COLORS.waterDeep, 1);
+      graphics.fillCircle(shaftX, shaftY, exitInnerRadius + 1);
+      graphics.lineStyle(2, 0xfff4c7, 1);
+      graphics.strokeCircle(shaftX, shaftY, exitOuterRadius + 2);
+      graphics.lineStyle(1, COLOR_VALUES.gold, 1);
+      graphics.strokeCircle(shaftX, shaftY, exitInnerRadius + 5);
+      playSoundCue(scene, "ui-hover");
+    })
+    .on("pointerout", () => {
+      graphics.clear();
+      graphics.fillStyle(COLORS.wallDark, 0.96);
+      graphics.fillCircle(shaftX, shaftY, exitOuterRadius);
+      graphics.fillStyle(COLORS.waterDeep, 1);
+      graphics.fillCircle(shaftX, shaftY, exitInnerRadius);
+      graphics.lineStyle(2, COLOR_VALUES.gold, 1);
+      graphics.strokeCircle(shaftX, shaftY, exitOuterRadius);
+      graphics.lineStyle(1, 0xfff4c7, 0.7);
+      graphics.strokeCircle(shaftX, shaftY, exitInnerRadius + 4);
+    })
+    .on("pointerdown", () => {
+      playSoundCue(scene, "ui-click");
+      selectLevel(scene, TOTAL_LEVELS - 1);
+      scene.scene.start("WinScene");
+    });
 }
 
 function createLockIcon(scene) {
@@ -1887,11 +1929,12 @@ class MainMenuScene extends Phaser.Scene {
       .setDepth(30);
 
     this.add
-      .text(40, 68, "CSD Game Jam submission", {
+      .text(150, 68, "CSD Game Jam submission", {
         ...LABEL_STYLE,
-        fontSize: "12px"
+        fontSize: "12px",
+        align: "center"
       })
-      .setOrigin(0, 0.5)
+      .setOrigin(0.5)
       .setDepth(30);
 
     createTextButton(this, 150, 118, "Play", () => {
@@ -2003,7 +2046,7 @@ class LevelSelectScene extends Phaser.Scene {
     const clearBannerText = this.registry.get("clearBannerText");
 
     addLevelSelectBackground(this);
-    drawLevelSelectExit(this);
+    drawLevelSelectExit(this, highestUnlockedLevel === TOTAL_LEVELS);
     addSceneTitle(this, "Level Select", "Choose an unlocked chamber", 56);
     playBackgroundMusic(this, "bg-music");
 
