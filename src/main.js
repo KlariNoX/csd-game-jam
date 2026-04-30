@@ -171,13 +171,13 @@ const LEVELS = [
     ],
     solids: [
       // Reachable route: low seal, climb to the high seal, then descend toward the locked exit.
-      { x: 0, y: 207, width: 72, height: 18, style: "backgroundFloor" },
+      { x: 0, y: 207, width: 72, height: 52, style: "backgroundFloor" },
       { x: 92, y: 190, width: 54, height: 12, style: "ruinLedge" },
       { x: 164, y: 174, width: 44, height: 12, style: "ruinLedge" },
       { x: 232, y: 146, width: 66, height: 12, style: "ruinLedge" },
       { x: 312, y: 166, width: 46, height: 12, style: "ruinLedge" },
       { x: 378, y: 188, width: 50, height: 12, style: "ruinLedge" },
-      { x: 428, y: 207, width: 52, height: 18, style: "backgroundFloor" }
+      { x: 428, y: 207, width: 52, height: 52, style: "backgroundFloor" }
     ],
     spikes: [
       // Downward spikes hang from the unreachable shelf for atmosphere and danger readability.
@@ -2914,7 +2914,12 @@ class GameScene extends Phaser.Scene {
   }
 
     drawSolidRect(graphics, rect) {
-    if (rect.style === "backgroundFloor" || rect.style === "invisible") {
+    if (rect.style === "invisible") {
+      return;
+    }
+
+    if (rect.style === "backgroundFloor") {
+      this.drawBackgroundFloor(rect);
       return;
     }
 
@@ -2965,6 +2970,58 @@ class GameScene extends Phaser.Scene {
 
       for (let socketX = rect.x + 10; socketX < rect.x + rect.width - 8; socketX += 16) {
         graphics.fillRect(socketX, rect.y - 2, 8, 4);
+      }
+    }
+  }
+
+  drawBackgroundFloor(rect) {
+    if (!this.textures.exists(PYRAMID_TILEGROUND_KEY)) {
+      const fallbackGraphics = this.add.graphics().setDepth(3);
+      fallbackGraphics.fillStyle(COLORS.wallMid, 1);
+      fallbackGraphics.fillRect(rect.x, rect.y, rect.width, rect.height);
+      fallbackGraphics.lineStyle(2, COLORS.wallDark, 0.6);
+      fallbackGraphics.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      return;
+    }
+
+    const tileSize = 16;
+    const tileColumns = Math.ceil(rect.width / tileSize);
+    const tileRows = Math.ceil(rect.height / tileSize);
+    const frames = {
+      top: [13, 14, 15],
+      middle: [25, 26, 27],
+      bottom: [37, 38, 39]
+    };
+
+    for (let row = 0; row < tileRows; row += 1) {
+      const rowFrames =
+        row === 0
+          ? frames.top
+          : row === tileRows - 1
+            ? frames.bottom
+            : frames.middle;
+      const tileY = rect.y + row * tileSize;
+      const cropHeight = Math.min(tileSize, rect.y + rect.height - tileY);
+
+      for (let column = 0; column < tileColumns; column += 1) {
+        const tileX = rect.x + column * tileSize;
+        const cropWidth = Math.min(tileSize, rect.x + rect.width - tileX);
+        let frame = rowFrames[1];
+
+        if (column === 0) {
+          frame = rowFrames[0];
+        } else if (column === tileColumns - 1) {
+          frame = rowFrames[2];
+        }
+
+        const floorTile = this.add
+          .image(tileX, tileY, PYRAMID_TILEGROUND_KEY, frame)
+          .setOrigin(0)
+          .setDepth(3);
+
+        if (cropWidth < tileSize || cropHeight < tileSize) {
+          floorTile.setCrop(0, 0, cropWidth, cropHeight);
+        }
       }
     }
   }
