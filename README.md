@@ -1,6 +1,6 @@
-# Crab Out of Nile
+# Untitled Crab Game
 
-Crab Out of Nile is a short 2D puzzle-platformer made for the 1-day game jam at CSD UOC. A crab escapes through ancient pyramid chambers, solves seal puzzles, avoids traps, and tries to reach the Nile. The ending reveals that reaching the river was only part of the problem.
+Untitled Crab Game is a short 2D puzzle-platformer made for the 1-day game jam at CSD UOC. A crab escapes through ancient pyramid chambers, solves seal puzzles, avoids traps, and tries to reach the Nile. The ending reveals that reaching the river was only part of the problem.
 
 ## Team
 
@@ -9,8 +9,8 @@ Crab Out of Nile is a short 2D puzzle-platformer made for the 1-day game jam at 
 
 ## Controls And Instructions
 
-- Move: `A` / `D` or left / right arrow keys
-- Jump: `W`, up arrow, or `Space`
+- Move: `A` / `D` or the left / right arrow keys
+- Jump: `W`, the up arrow key, or `Space`
 - Advance storyboard panels: `Space`
 - Skip storyboard: `Esc` or the Skip button
 - Pause: `Esc` during gameplay
