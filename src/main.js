@@ -201,18 +201,9 @@ const LEVELS = [
     puzzle: {
       requiredSwitchCount: 1,
       switches: [
-        // // Low seal introduces the Level 2 objective without pressure.
         { id: "low-sun-seal", x: 0, y: 42, width: 30, height: 8 },
-        // // High seal asks the player to use the moving sand lift and avoid the edge spikes.
-        // { id: "high-scarab-seal", x: 300, y: 127, width: 30, height: 8 }
       ]
     },
-    decorations: [
-      // { type: "sandPit", x: 84, y: 202, width: 76, height: 68 },
-      // { type: "sandPit", x: 226, y: 202, width: 88, height: 68 },
-      // // A higher false ledge with hanging spikes makes Sand Hall feel layered but stays off-route.
-      // { type: "ceilingLedge", x: 36, y: 100, width: 92, height: 12 }
-    ],
     solids: [
       { x: 0, y: 202, width: 130, height: 58, style: "backgroundFloor" },
       { x: 104, y: 142, width: 58, height: 12, style: "ruinLedge" },
@@ -220,25 +211,11 @@ const LEVELS = [
       { x: 0, y: 50, width: 25, height: 12, style: "ruinLedge" },
       { x: 224, y: 202, width: 140, height: 58, style: "ruinLedge" },
       { x: 430, y: 202, width: 50, height: 58, style: "backgroundFloor" },
-      // { x: 360, y: 164, width: 48, height: 12, style: "ruinLedge" },
-      // { x: 420, y: 202, width: 60, height: 38, style: "backgroundFloor" }
-    ],
-    movingPlatforms: [
-      // The sand lift crosses the central pit slowly enough for a beginner to read and ride.
-      // { x: 234, y: 169, width: 46, height: 10, fromX: 232, toX: 280, duration: 2600 }
     ],
     spikes: [
-      // Short floor clusters mark the gaps without punishing the spawn.
       { x: 84, y: 202, width: 40 },
-      // { x: 160, y: 202, width: 20 },
-      // { x: 248, y: 202, width: 28 },
-      // { x: 314, y: 202, width: 22 },
-      // // This small platform-edge trap adds risk near the second seal while leaving a safe landing zone.
-      // { x: 334, y: 134, width: 18 },
-      // { x: 52, y: 112, width: 62, direction: "down" }
     ],
     blades: [
-      // Vertical blade guarding the first jump out of the left puzzle yard.
       { x1: 194, y1: 54, x2: 194, y2: 194, radius: 10, duration: 1700, phase: 180, broken: false },
       { x1: 0, y1: 86, x2: 58, y2: 86, radius: 10, duration: 1700, phase: 180, broken: false },
 
@@ -252,45 +229,55 @@ const LEVELS = [
       "Ancient Engineer Report #3:\nThe temple now tests practical intelligence.\nPush the marked stones onto seals, then use the second block as a step toward the upper scarab.",
     startX: 36,
     startY: 193,
-    goal: { x: 430, y: 119, width: 34, height: 83, kind: "door", label: "EXIT" },
+    goal: { x: 0, y: 19, width: 34, height: 83, kind: "door", label: "EXIT" },
     puzzle: {
-      requiredSwitchCount: 2,
+      requiredSwitchCount: 1,
       switches: [
-        // Box-only seal: the first stone block must be pushed onto this plate.
-        { id: "box-floor-seal", x: 122, y: 194, width: 32, height: 8, activation: "box" },
-        // Upper seal: the second box creates a beginner-friendly step up to this platform.
-        { id: "upper-scarab-seal", x: 314, y: 125, width: 30, height: 8 }
+        // // Box-only seal: the first stone block must be pushed onto this plate.
+        { id: "box-floor-seal", x: GAME_WIDTH - 32, y: 194, width: 32, height: 8, activation: "box" },
+        // // Upper seal: the second box creates a beginner-friendly step up to this platform.
+        // { id: "upper-scarab-seal", x: 314, y: 125, width: 30, height: 8 }
       ]
     },
     decorations: [
-      { type: "sandPit", x: 168, y: 202, width: 28, height: 68 },
-      { type: "sandPit", x: 364, y: 202, width: 34, height: 68 },
-      // The upper broken shelf is visual danger only; it hints at deeper tomb traps.
-      { type: "ceilingLedge", x: 42, y: 92, width: 86, height: 12 }
+      // { type: "sandPit", x: 168, y: 202, width: 28, height: 68 },
+      // { type: "sandPit", x: 364, y: 202, width: 34, height: 68 },
+      // // The upper broken shelf is visual danger only; it hints at deeper tomb traps.
+      // { type: "ceilingLedge", x: 42, y: 92, width: 86, height: 12 }
     ],
     solids: [
       // Two box puzzle yards sit on the background floor, with an upper route unlocked by stacking movement.
-      { x: 0, y: 202, width: 168, height: 38, style: "backgroundFloor" },
-      { x: 196, y: 184, width: 52, height: 12, style: "ruinLedge" },
-      { x: 226, y: 202, width: 118, height: 38, style: "backgroundFloor" },
-      { x: 300, y: 132, width: 58, height: 12, style: "ruinLedge" },
-      { x: 356, y: 166, width: 42, height: 12, style: "ruinLedge" },
-      { x: 398, y: 202, width: 82, height: 38, style: "backgroundFloor" }
+      { x: 0, y: 202, width: GAME_WIDTH, height: 68, style: "backgroundFloor" }, // FLOOR
+      { x: 0, y: 102, width: 58, height: 12, style: "ruinLedge" }, // DOOR PLATFORM
+      { x: 80, y: 52, width: 58, height: 12, style: "ruinLedge" },
+      { x: 150, y: 102, width: 240, height: 12, style: "ruinLedge" }, // wide platform
+      // { x: 196, y: 184, width: 52, height: 12, style: "ruinLedge" },
+      // { x: 226, y: 202, width: 118, height: 38, style: "backgroundFloor" },
+      // { x: 300, y: 132, width: 58, height: 12, style: "ruinLedge" },
+      // { x: 356, y: 166, width: 42, height: 12, style: "ruinLedge" },
+      // { x: 398, y: 202, width: 82, height: 38, style: "backgroundFloor" }
     ],
     boxes: [
       // Plate box: fenced to the left puzzle yard so it cannot be lost behind the spike gap.
-      { id: "plate-box", x: 58, y: 184, width: 20, height: 18, bounds: { minX: 20, maxX: 164 } },
+      { id: "plate-box", x: 58, y: 184, width: 20, height: 18, bounds: { minX: 20, maxX: GAME_WIDTH - 20 } },
       // Step box: used as a portable stair to reach the higher scarab seal.
-      { id: "step-box", x: 238, y: 184, width: 20, height: 18, bounds: { minX: 226, maxX: 344 } }
+      // { id: "step-box", x: 238, y: 184, width: 20, height: 18, bounds: { minX: 226, maxX: 344 } }
     ],
     spikes: [
-      // The first gap is the teaching hazard: cross it with a jump, not by rushing the box.
-      { x: 168, y: 202, width: 28 },
-      // Edge spikes make the upper seal route deliberate while leaving room for the box-step solution.
-      { x: 346, y: 132, width: 12 },
-      { x: 364, y: 202, width: 26 },
-      { x: 58, y: 104, width: 58, direction: "down" }
-    ]
+      // // The first gap is the teaching hazard: cross it with a jump, not by rushing the box.
+      { x: 150, y: 102, width: 10 },
+      { x: 220, y: 102, width: 15 },
+      { x: 300, y: 102, width: 20 },
+      // { x: 58, y: 104, width: 58, direction: "down" }
+    ],
+    blades: [
+      { x1: 150, y1: 112, x2: 150, y2: 200, radius: 10, duration: 850, phase: 180, broken: false },
+      { x1: 250, y1: 200, x2: 250, y2: 112, radius: 10, duration: 850, phase: 180, broken: false },
+      { x1: 350, y1: 112, x2: 350, y2: 200, radius: 10, duration: 850, phase: 180, broken: false },
+    ],
+    movingPlatforms: [
+      { x: 234, y: 169, width: 46, height: 10, fromX: GAME_WIDTH - 46, toX: GAME_WIDTH - 46, fromY: 169, toY: 100, duration: 2600 }
+    ],
   },
       {
     name: "Moon Shaft",
@@ -3268,7 +3255,8 @@ class GameScene extends Phaser.Scene {
       ...platformConfig,
       bodyObject: platformBody,
       art: platformArt,
-      previousX: centerX
+      previousX: centerX,
+      previousY: centerY
     });
   }
 
@@ -3303,29 +3291,36 @@ class GameScene extends Phaser.Scene {
         y,
         fromX = movingPlatform.x,
         toX = movingPlatform.x,
+        fromY = y,
+        toY = y,
         duration = 2400,
         phase = 0
       } = movingPlatform;
       const cycle = ((time + phase) % duration) / duration;
       const travel = 0.5 - Math.cos(cycle * Math.PI * 2) * 0.5;
       const nextX = Phaser.Math.Linear(fromX + width / 2, toX + width / 2, travel);
-      const nextY = y + height / 2;
+      const nextY = Phaser.Math.Linear(fromY + height / 2, toY + height / 2, travel);
       const previousX = bodyObject.x;
+      const previousY = bodyObject.y;
       const deltaX = nextX - previousX;
+      const deltaY = nextY - previousY;
 
       bodyObject.setPosition(nextX, nextY);
       bodyObject.body.updateFromGameObject();
-      bodyObject.body.setVelocity((deltaX * 1000) / safeDelta, 0);
+      bodyObject.body.setVelocity((deltaX * 1000) / safeDelta, (deltaY * 1000) / safeDelta);
       this.drawMovingPlatformArt(movingPlatform);
 
       // The sand lift carries the crab when it is standing on top, keeping the
       // Level 2 moving-platform puzzle forgiving instead of slippery.
-      if (this.isPlayerStandingOnMovingPlatform(movingPlatform) && Math.abs(deltaX) > 0) {
+      if (this.isPlayerStandingOnMovingPlatform(movingPlatform) && (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0)) {
         this.player.x = Phaser.Math.Clamp(this.player.x + deltaX, 0, GAME_WIDTH);
+        this.player.y += deltaY;
         this.player.body.x += deltaX;
+        this.player.body.y += deltaY;
       }
 
       movingPlatform.previousX = nextX;
+      movingPlatform.previousY = nextY;
     });
   }
 
