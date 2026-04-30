@@ -120,6 +120,10 @@ const COLORS = {
   gold: "#f3d36b"
 };
 
+const COLOR_VALUES = {
+  gold: 0xf3d36b
+};
+
 const FONTS = {
   ui: '"Trebuchet MS", Verdana, sans-serif',
   title: 'Georgia, "Times New Roman", serif'
@@ -632,6 +636,18 @@ function saveProgressToStorage(highestUnlockedLevel) {
   }
 }
 
+function resetGameProgress(scene) {
+  try {
+    window.localStorage.clear();
+  } catch (error) {
+    // If storage is unavailable, the in-memory reset still lets this session restart.
+  }
+
+  scene.registry.set("highestUnlockedLevel", 1);
+  scene.registry.set("selectedLevel", 0);
+  scene.registry.set("clearBannerText", "");
+}
+
 function ensureProgress(scene) {
   let highestUnlockedLevel = scene.registry.get("highestUnlockedLevel");
 
@@ -889,52 +905,374 @@ function createPanel(scene, x, y, width, height) {
 
   panel.fillStyle(0x2c170b, 0.82);
   panel.fillRoundedRect(x, y, width, height, 10);
-  panel.lineStyle(2, COLORS.gold, 1);
+  panel.lineStyle(2, COLOR_VALUES.gold, 1);
   panel.strokeRoundedRect(x, y, width, height, 10);
 
   return panel;
 }
 
-function createTextButton(scene, x, y, label, onClick, width = 140) {
-  const button = scene.add
-    .text(x, y, label, BUTTON_STYLE)
+function getTextButtonPalette(variant) {
+  if (variant === "danger") {
+    return {
+      top: 0x92512a,
+      mid: 0x71301f,
+      dark: 0x1b0905,
+      hoverTop: 0xb56431,
+      hoverMid: 0x8a3822,
+      downTop: 0x5e2619,
+      downMid: 0x451911,
+      trim: 0xffc760,
+      accent: 0xd97432,
+      grain: 0x35110a,
+      text: "#fff0bf",
+      hoverText: "#ffe08a",
+      downText: "#ffd06a"
+    };
+  }
+
+  if (variant === "secondary") {
+    return {
+      top: 0x5c4129,
+      mid: 0x49301f,
+      dark: 0x180d08,
+      hoverTop: 0x705034,
+      hoverMid: 0x5a3a25,
+      downTop: 0x3f291b,
+      downMid: 0x2e1d13,
+      trim: 0xb98d4b,
+      accent: 0x7e5a34,
+      grain: 0x24140b,
+      text: COLORS.white,
+      hoverText: "#fff3b4",
+      downText: "#e8c981"
+    };
+  }
+
+  return {
+    top: 0x704020,
+    mid: 0x5c3820,
+    dark: 0x241109,
+    hoverTop: 0x8a552d,
+    hoverMid: 0x744226,
+    downTop: 0x5b321c,
+    downMid: 0x4a2817,
+    trim: COLOR_VALUES.gold,
+    accent: 0xb06f32,
+    grain: 0x34180b,
+    text: BUTTON_STYLE.color,
+    hoverText: "#fff3b4",
+    downText: "#f7d58a"
+  };
+}
+
+function paintTextButton(graphics, width, height, state = "normal", variant = "normal") {
+  const isHover = state === "hover";
+  const isDown = state === "down";
+  const palette = getTextButtonPalette(variant);
+  const topColor = isDown ? palette.downTop : isHover ? palette.hoverTop : palette.top;
+  const midColor = isDown ? palette.downMid : isHover ? palette.hoverMid : palette.mid;
+  const darkColor = isDown ? 0x1b0d07 : palette.dark;
+  const goldAlpha = isHover ? 1 : 0.72;
+
+  graphics.clear();
+  graphics.fillStyle(0x090403, 0.62);
+  graphics.fillRect(-width / 2 + 3, -height / 2 + 4, width, height);
+
+  graphics.fillStyle(darkColor, 1);
+  graphics.fillRect(-width / 2, -height / 2, width, height);
+  graphics.fillStyle(topColor, 1);
+  graphics.fillRect(-width / 2 + 4, -height / 2 + 4, width - 8, height - 8);
+  graphics.fillStyle(midColor, 1);
+  graphics.fillRect(-width / 2 + 4, -height / 2 + 12, width - 8, height - 16);
+
+  graphics.fillStyle(palette.accent, isHover ? 0.44 : 0.28);
+  for (let stripeX = -width / 2 + 12; stripeX < width / 2 - 8; stripeX += 16) {
+    graphics.fillRect(stripeX, -height / 2 + 7, 9, 2);
+  }
+
+  graphics.fillStyle(palette.grain, 0.38);
+  for (let grainX = -width / 2 + 10; grainX < width / 2 - 10; grainX += 18) {
+    graphics.fillRect(grainX, height / 2 - 12, 10, 2);
+  }
+
+  graphics.fillStyle(palette.trim, goldAlpha);
+  graphics.fillRect(-width / 2 + 6, -height / 2 + 5, width - 12, 2);
+  graphics.fillRect(-width / 2 + 6, height / 2 - 7, width - 12, 2);
+  graphics.fillRect(-width / 2 + 6, -height / 2 + 5, 2, 8);
+  graphics.fillRect(width / 2 - 8, -height / 2 + 5, 2, 8);
+  graphics.fillRect(-width / 2 + 6, height / 2 - 13, 2, 8);
+  graphics.fillRect(width / 2 - 8, height / 2 - 13, 2, 8);
+
+  graphics.fillStyle(0xfff3b4, isHover ? 0.45 : 0.16);
+  graphics.fillRect(-width / 2 + 10, -height / 2 + 8, width - 20, 1);
+
+  if (isHover) {
+    graphics.fillStyle(0xffe08a, 0.82);
+    graphics.fillTriangle(-width / 2 + 13, 0, -width / 2 + 23, -6, -width / 2 + 23, 6);
+    graphics.fillTriangle(width / 2 - 13, 0, width / 2 - 23, -6, width / 2 - 23, 6);
+  }
+}
+
+function createTextButton(scene, x, y, label, onClick, width = 140, options = {}) {
+  const height = 34;
+  const variant = options.variant || "normal";
+  const palette = getTextButtonPalette(variant);
+  const button = scene.add.container(x, y);
+  const background = scene.add.graphics();
+  const hitZone = scene.add
+    .zone(0, 0, width, height)
     .setOrigin(0.5)
     .setInteractive({ useHandCursor: true });
+  const text = scene.add
+    .text(0, 0, label, {
+      fontFamily: BUTTON_STYLE.fontFamily,
+      fontSize: BUTTON_STYLE.fontSize,
+      color: palette.text
+    })
+    .setOrigin(0.5)
+    .setShadow(0, 2, "#1a0f08", 0, true, true);
 
   button.baseY = y;
-  button.setFixedSize(width, 34);
-  button.setAlign("center");
-  button.setPadding(0, 8, 0, 0);
+  button.add([background, text, hitZone]);
+  button.setSize(width, height);
   button.setDepth(40);
-  button.setShadow(0, 2, "#1a0f08", 0, true, true);
 
-  button
+  paintTextButton(background, width, height, "normal", variant);
+
+  const animateButton = (state) => {
+    scene.tweens.killTweensOf(button);
+    scene.tweens.killTweensOf(text);
+
+    if (state === "hover") {
+      paintTextButton(background, width, height, "hover", variant);
+      text.setColor(palette.hoverText);
+      scene.tweens.add({
+        targets: button,
+        y: button.baseY - 3,
+        scaleX: 1.055,
+        scaleY: 1.055,
+        duration: 120,
+        ease: "Back.Out"
+      });
+      scene.tweens.add({
+        targets: text,
+        y: -1,
+        duration: 180,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.InOut"
+      });
+      return;
+    }
+
+    if (state === "down") {
+      paintTextButton(background, width, height, "down", variant);
+      text.setColor(palette.downText);
+      scene.tweens.add({
+        targets: button,
+        y: button.baseY + 1,
+        scaleX: 0.98,
+        scaleY: 0.98,
+        duration: 60,
+        ease: "Quad.Out"
+      });
+      return;
+    }
+
+    paintTextButton(background, width, height, "normal", variant);
+    text.setColor(palette.text);
+    text.setY(0);
+    scene.tweens.add({
+      targets: button,
+      y: button.baseY,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 110,
+      ease: "Quad.Out"
+    });
+  };
+
+  hitZone
     .on("pointerover", () => {
-      button.setStyle({ backgroundColor: "#7b4d2b", color: "#fff3b4" });
-      button.setScale(1.04);
-      button.setY(button.baseY - 1);
+      animateButton("hover");
       playSoundCue(scene, "ui-hover");
     })
     .on("pointerout", () => {
-      button.setStyle({
-        backgroundColor: BUTTON_STYLE.backgroundColor,
-        color: BUTTON_STYLE.color
-      });
-      button.setScale(1);
-      button.setY(button.baseY);
+      animateButton("normal");
     })
     .on("pointerdown", () => {
       playSoundCue(scene, "ui-click");
-      button.setScale(0.98);
-      button.setY(button.baseY + 1);
+      animateButton("down");
       onClick();
     })
     .on("pointerup", () => {
-      button.setScale(1.04);
-      button.setY(button.baseY - 1);
+      animateButton("hover");
     });
 
   return button;
+}
+
+function drawPixelDialogFrame(scene, x, y, width, height, depth = 90) {
+  const graphics = scene.add.graphics().setDepth(depth);
+
+  graphics.fillStyle(0x050201, 0.76);
+  graphics.fillRect(x + 8, y + 8, width, height);
+
+  graphics.fillStyle(0x0d0603, 1);
+  graphics.fillRect(x, y, width, height);
+  graphics.fillStyle(COLOR_VALUES.gold, 1);
+  graphics.fillRect(x + 6, y, width - 12, 4);
+  graphics.fillRect(x + 6, y + height - 4, width - 12, 4);
+  graphics.fillRect(x, y + 6, 4, height - 12);
+  graphics.fillRect(x + width - 4, y + 6, 4, height - 12);
+  graphics.fillRect(x + 4, y + 4, 10, 10);
+  graphics.fillRect(x + width - 14, y + 4, 10, 10);
+  graphics.fillRect(x + 4, y + height - 14, 10, 10);
+  graphics.fillRect(x + width - 14, y + height - 14, 10, 10);
+
+  graphics.fillStyle(0x2a1409, 1);
+  graphics.fillRect(x + 14, y + 14, width - 28, height - 28);
+  graphics.fillStyle(0x170a05, 0.96);
+  graphics.fillRect(x + 26, y + 64, width - 52, height - 112);
+
+  graphics.fillStyle(0x32190c, 0.48);
+  for (let tileY = y + 74; tileY < y + height - 74; tileY += 20) {
+    for (let tileX = x + 38; tileX < x + width - 38; tileX += 48) {
+      graphics.fillRect(tileX, tileY, 28, 1);
+    }
+  }
+
+  graphics.fillStyle(0x6d4416, 1);
+  graphics.fillRect(x + 18, y + 18, width - 36, 2);
+  graphics.fillRect(x + 18, y + height - 20, width - 36, 2);
+
+  graphics.fillStyle(COLOR_VALUES.gold, 0.28);
+  for (let glyphX = x + 44; glyphX <= x + width - 54; glyphX += 46) {
+    graphics.fillRect(glyphX, y + 30, 5, 5);
+    graphics.fillRect(glyphX + 12, y + 32, 18, 2);
+  }
+
+  return graphics;
+}
+
+function drawWarningGlyph(scene, x, y, depth = 94) {
+  const graphics = scene.add.graphics().setDepth(depth);
+
+  graphics.fillStyle(0x120905, 1);
+  graphics.fillTriangle(x - 11, y + 9, x, y - 12, x + 11, y + 9);
+  graphics.fillStyle(0xd06a2e, 1);
+  graphics.fillTriangle(x - 9, y + 7, x, y - 9, x + 9, y + 7);
+  graphics.fillStyle(0xffd37a, 1);
+  graphics.fillRect(x - 1, y - 3, 2, 7);
+  graphics.fillRect(x - 1, y + 6, 2, 2);
+
+  return graphics;
+}
+
+function showNewGameConfirmation(scene) {
+  if (scene.newGameDialogObjects?.length) {
+    return;
+  }
+
+  const panelWidth = 336;
+  const panelHeight = 214;
+  const panelX = (GAME_WIDTH - panelWidth) / 2;
+  const panelY = (GAME_HEIGHT - panelHeight) / 2;
+  const centerX = GAME_WIDTH / 2;
+  const dialogObjects = [];
+  const blocker = scene.add
+    .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x070302, 0.72)
+    .setDepth(80)
+    .setInteractive();
+
+  dialogObjects.push(blocker);
+  dialogObjects.push(drawPixelDialogFrame(scene, panelX, panelY, panelWidth, panelHeight));
+
+  const titlePlate = scene.add.graphics().setDepth(91);
+  titlePlate.fillStyle(0x090403, 1);
+  titlePlate.fillRect(centerX - 92, panelY + 20, 184, 40);
+  titlePlate.fillStyle(0x5c3218, 1);
+  titlePlate.fillRect(centerX - 84, panelY + 26, 168, 28);
+  titlePlate.fillStyle(COLOR_VALUES.gold, 1);
+  titlePlate.fillRect(centerX - 78, panelY + 29, 156, 3);
+  titlePlate.fillRect(centerX - 78, panelY + 50, 156, 3);
+  titlePlate.fillStyle(0xffefad, 0.34);
+  titlePlate.fillRect(centerX - 68, panelY + 33, 136, 1);
+  dialogObjects.push(titlePlate);
+
+  const title = scene.add
+    .text(centerX, panelY + 41, "New Game?", {
+      fontFamily: FONTS.title,
+      fontSize: "20px",
+      color: COLORS.gold,
+      stroke: "#120905",
+      strokeThickness: 3
+    })
+    .setOrigin(0.5)
+    .setDepth(94);
+
+  const body = scene.add
+    .text(
+      centerX,
+      panelY + 96,
+      "Start over from Level 1?",
+      {
+        ...LABEL_STYLE,
+        align: "center",
+        fontSize: "13px",
+        color: "#fff4d0",
+        wordWrap: { width: 236, useAdvancedWrap: true }
+      }
+    )
+    .setOrigin(0.5)
+    .setDepth(94);
+
+  const warningPlate = scene.add.graphics().setDepth(91);
+  warningPlate.fillStyle(0x090403, 1);
+  warningPlate.fillRect(centerX - 132, panelY + 124, 264, 34);
+  warningPlate.fillStyle(0x3c1b0d, 1);
+  warningPlate.fillRect(centerX - 126, panelY + 130, 252, 22);
+  warningPlate.fillStyle(0x7a2d1a, 0.82);
+  warningPlate.fillRect(centerX - 122, panelY + 134, 244, 14);
+  warningPlate.fillStyle(COLOR_VALUES.gold, 0.74);
+  warningPlate.fillRect(centerX - 118, panelY + 132, 236, 2);
+  dialogObjects.push(warningPlate);
+  dialogObjects.push(drawWarningGlyph(scene, centerX - 106, panelY + 141));
+
+  const warning = scene.add
+    .text(centerX + 16, panelY + 141, "All saved progress will be erased.", {
+      fontFamily: FONTS.ui,
+      fontSize: "10px",
+      color: "#ffe09a"
+    })
+    .setOrigin(0.5)
+    .setDepth(94);
+
+  dialogObjects.push(title, body, warning);
+
+  const closeDialog = () => {
+    dialogObjects.forEach((object) => object.destroy());
+    scene.newGameDialogObjects = [];
+  };
+
+  const okButton = createTextButton(scene, centerX - 68, panelY + 188, "Okay", () => {
+    resetGameProgress(scene);
+    closeDialog();
+    scene.scene.start("LevelSelectScene");
+  }, 112, { variant: "danger" }).setDepth(96);
+
+  const cancelButton = createTextButton(
+    scene,
+    centerX + 68,
+    panelY + 188,
+    "Cancel",
+    closeDialog,
+    112,
+    { variant: "secondary" }
+  ).setDepth(96);
+
+  dialogObjects.push(okButton, cancelButton);
+  scene.newGameDialogObjects = dialogObjects;
 }
 
 function createPapyrusActionText(scene, x, y, label, onClick, hitWidth = 130) {
@@ -1213,7 +1551,7 @@ function drawLevelSelectExit(scene) {
   graphics.fillCircle(shaftX, shaftY, exitOuterRadius);
   graphics.fillStyle(COLORS.waterDeep, 1);
   graphics.fillCircle(shaftX, shaftY, exitInnerRadius);
-  graphics.lineStyle(2, COLORS.gold, 1);
+  graphics.lineStyle(2, COLOR_VALUES.gold, 1);
   graphics.strokeCircle(shaftX, shaftY, exitOuterRadius);
   graphics.lineStyle(1, 0xfff4c7, 0.7);
   graphics.strokeCircle(shaftX, shaftY, exitInnerRadius + 4);
@@ -1245,14 +1583,16 @@ function createLockIcon(scene) {
 
 function createLevelNode(scene, x, y, levelIndex, unlocked, onSelect) {
   const node = scene.add.container(x, y);
-  const outerColor = unlocked ? COLORS.gold : COLORS.locked;
+  const outerColor = unlocked ? COLOR_VALUES.gold : COLORS.locked;
   const innerColor = unlocked ? COLORS.sandLight : COLORS.stone;
+  const shadow = scene.add.circle(3, 3, 17, 0x090403, 0.68);
   const outerRing = scene.add.circle(0, 0, 16, outerColor);
   const innerDot = scene.add.circle(0, 0, 8, innerColor);
 
-  outerRing.setStrokeStyle(2, unlocked ? 0xfff8de : 0x87694d);
+  outerRing.setStrokeStyle(2, unlocked ? 0xb5782c : 0x87694d);
+  innerDot.setStrokeStyle(1, unlocked ? 0xc48a42 : 0x5d4127);
 
-  node.add([outerRing, innerDot]);
+  node.add([shadow, outerRing, innerDot]);
 
   if (unlocked) {
     const label = scene.add
@@ -1534,7 +1874,6 @@ class MainMenuScene extends Phaser.Scene {
     addMenuBackground(this);
     playBackgroundMusic(this, "bg-music");
     ensureCrabAnimations(this);
-    createPanel(this, 26, 82, 218, 146);
 
     this.add
       .text(36, 42, "Untitled Crab Game", {
@@ -1555,26 +1894,17 @@ class MainMenuScene extends Phaser.Scene {
       .setOrigin(0, 0.5)
       .setDepth(30);
 
-    this.add
-      .text(
-        135,
-        112,
-        "You're a crab in a Pyramid.\nNow you have to find a way out. Good luck!",
-        {
-          ...LABEL_STYLE,
-          align: "center",
-          wordWrap: { width: 182 }
-        }
-      )
-      .setOrigin(0.5);
-
-    createTextButton(this, 135, 158, "Play", () => {
+    createTextButton(this, 150, 118, "Play", () => {
       this.scene.start("LevelSelectScene");
-    });
+    }, 158);
 
-    createTextButton(this, 135, 202, "Settings", () => {
+    createTextButton(this, 150, 160, "New Game", () => {
+      showNewGameConfirmation(this);
+    }, 158);
+
+    createTextButton(this, 150, 202, "Settings", () => {
       this.scene.start("SettingsScene");
-    });
+    }, 158);
 
     const crab = this.add
       .sprite(334, 208, CRAB_SPRITESHEET_KEY, CRAB_IDLE_FRAME)
@@ -1703,7 +2033,7 @@ class LevelSelectScene extends Phaser.Scene {
       const start = pathPoints[index];
       const end = pathPoints[index + 1];
 
-      drawDashedLine(this, start.x, start.y, end.x, end.y, COLORS.gold, 0.95);
+      drawDashedLine(this, start.x, start.y, end.x, end.y, COLOR_VALUES.gold, 0.95);
     }
 
     LEVEL_NODE_POSITIONS.forEach((nodePosition, levelIndex) => {
@@ -2221,7 +2551,7 @@ class GameScene extends Phaser.Scene {
       graphics.fillRoundedRect(goal.x, goal.y, goal.width, goal.height, 10);
       graphics.fillStyle(COLORS.water, 1);
       graphics.fillRoundedRect(goal.x + 6, goal.y + 6, goal.width - 12, goal.height - 12, 8);
-      graphics.lineStyle(2, COLORS.gold, 0.95);
+      graphics.lineStyle(2, COLOR_VALUES.gold, 0.95);
       graphics.strokeRoundedRect(goal.x - 4, goal.y - 4, goal.width + 8, goal.height + 8, 12);
 
       this.add
@@ -2922,9 +3252,9 @@ class GameScene extends Phaser.Scene {
     markings.clear();
     markings.fillStyle(0x2c170b, 0.22);
     markings.fillRect(left + 2, top + height - 4, width - 4, 3);
-    markings.lineStyle(1, COLORS.gold, 0.82);
+    markings.lineStyle(1, COLOR_VALUES.gold, 0.82);
     markings.strokeRect(left + 3, top + 3, width - 6, height - 6);
-    markings.fillStyle(COLORS.gold, 0.94);
+    markings.fillStyle(COLOR_VALUES.gold, 0.94);
     markings.fillEllipse(centerX, centerY, 7, 5);
     markings.fillRect(centerX - 1, top + 5, 2, height - 10);
     markings.lineStyle(1, COLORS.bronzeDark, 0.65);
@@ -3095,13 +3425,13 @@ class GameScene extends Phaser.Scene {
     if (ratio <= 0.24) {
       fillColor = 0xff8d58;
     } else if (ratio <= 0.5) {
-      fillColor = COLORS.gold;
+      fillColor = COLOR_VALUES.gold;
     }
 
     this.wetnessFrame.clear();
     this.wetnessFrame.fillStyle(0x2c170b, 0.85);
     this.wetnessFrame.fillRoundedRect(barX, barY, barWidth, barHeight, 6);
-    this.wetnessFrame.lineStyle(2, COLORS.gold, 1);
+    this.wetnessFrame.lineStyle(2, COLOR_VALUES.gold, 1);
     this.wetnessFrame.strokeRoundedRect(barX, barY, barWidth, barHeight, 6);
 
     this.wetnessFill.clear();
