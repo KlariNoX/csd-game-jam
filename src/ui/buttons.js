@@ -120,9 +120,18 @@ export function paintTextButton(graphics, width, height, state = "normal", varia
   graphics.fillRect(-width / 2 + 10, -height / 2 + 8, width - 20, 1);
 
   if (isHover) {
+    const isCompactButton = width < 92;
+    const arrowInset = isCompactButton ? 5 : 13;
+    const arrowDepth = isCompactButton ? 9 : 10;
+    const arrowHalfHeight = isCompactButton ? 5 : 6;
+    const leftTipX = -width / 2 + arrowInset;
+    const leftBaseX = leftTipX + arrowDepth;
+    const rightTipX = width / 2 - arrowInset;
+    const rightBaseX = rightTipX - arrowDepth;
+
     graphics.fillStyle(0xffe08a, 0.82);
-    graphics.fillTriangle(-width / 2 + 13, 0, -width / 2 + 23, -6, -width / 2 + 23, 6);
-    graphics.fillTriangle(width / 2 - 13, 0, width / 2 - 23, -6, width / 2 - 23, 6);
+    graphics.fillTriangle(leftTipX, 0, leftBaseX, -arrowHalfHeight, leftBaseX, arrowHalfHeight);
+    graphics.fillTriangle(rightTipX, 0, rightBaseX, -arrowHalfHeight, rightBaseX, arrowHalfHeight);
   }
 }
 

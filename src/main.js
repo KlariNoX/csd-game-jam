@@ -2,6 +2,7 @@
 import { GAME_HEIGHT, GAME_WIDTH } from "./config/constants.js";
 import { showOpeningStoryboard } from "./storyboard.js";
 import { GameScene } from "./scenes/GameScene.js";
+import { LevelEditorScene } from "./scenes/LevelEditorScene.js";
 import { LevelSelectScene } from "./scenes/LevelSelectScene.js";
 import { MainMenuScene } from "./scenes/MainMenuScene.js";
 import { ReportScene } from "./scenes/ReportScene.js";
@@ -37,6 +38,7 @@ const config = {
     MainMenuScene,
     SettingsScene,
     SandboxScene,
+    LevelEditorScene,
     LevelSelectScene,
     ReportScene,
     GameScene,

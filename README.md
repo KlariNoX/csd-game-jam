@@ -19,7 +19,7 @@ The project has grown past a simple jam prototype. It now includes a modular sce
 - Persistent unlock progress stored in `localStorage`
 - Pixel-styled UI with Phaser-built popups and overlays
 - Sandbox mode for movement practice
-- A `My Levels` flow with create/delete scaffolding for future level-editor work
+- A `My Levels` flow with create, open, delete, save, and play-test support
 
 ## Controls
 
@@ -49,15 +49,18 @@ The sandbox scene currently supports two directions:
 - `Practice`: launches a no-progress room for movement, jumping, box pushing, and moving-platform behavior
 - `My Levels`: opens a management popup for locally saved user levels
 
-Current user-level support is intentionally early-stage:
+Current user-level support is a first playable editor version:
 
 - levels are stored in `localStorage`
 - the player can create a new level entry with a name and one of the five campaign backgrounds
 - saved levels appear dynamically in the `My Levels` popup
+- `Create` opens the new level directly in the editor
+- `Open` loads an existing saved level in the editor
+- the editor can place floors, ledges, moving platforms, spikes, blocks, an exit, and the crab start point
+- custom levels can be saved and play-tested with Arcade Physics
 - entries can be deleted
-- `Open` is still a placeholder until the actual level editor / loader is implemented
 
-This means the repository already contains the storage and UI groundwork for a future custom level engine, but not the editor itself yet.
+This is still intentionally a first version. It gives the project a working custom-level engine foundation, while deeper editor features can be built on top of the saved layout format.
 
 ## Tech Stack
 
@@ -81,6 +84,7 @@ This means the repository already contains the storage and UI groundwork for a f
 |   |   `-- levels.js
 |   |-- scenes/
 |   |   |-- GameScene.js
+|   |   |-- LevelEditorScene.js
 |   |   |-- LevelSelectScene.js
 |   |   |-- MainMenuScene.js
 |   |   |-- ReportScene.js
@@ -88,7 +92,8 @@ This means the repository already contains the storage and UI groundwork for a f
 |   |   |-- SettingsScene.js
 |   |   `-- WinScene.js
 |   |-- state/
-|   |   `-- progress.js
+|   |   |-- progress.js
+|   |   `-- userLevels.js
 |   |-- systems/
 |   |   `-- audio.js
 |   |-- ui/
@@ -113,7 +118,8 @@ Other branches:
 - `Main Menu -> Sandbox`
 - `Main Menu -> Settings`
 - `Sandbox -> Practice`
-- `Sandbox -> My Levels -> Create Level`
+- `Sandbox -> My Levels -> Create Level -> Level Editor`
+- `Sandbox -> My Levels -> Open -> Level Editor`
 
 ## Data And Persistence
 
@@ -191,8 +197,10 @@ Helpful starting points:
 - [src/main.js](/c:/Users/User/Documents/GitHub/csd-game-jam/src/main.js): Phaser bootstrapping and scene registration
 - [src/data/levels.js](/c:/Users/User/Documents/GitHub/csd-game-jam/src/data/levels.js): campaign level definitions
 - [src/scenes/GameScene.js](/c:/Users/User/Documents/GitHub/csd-game-jam/src/scenes/GameScene.js): core gameplay, hazards, puzzle flow, HUD, pause menu
+- [src/scenes/LevelEditorScene.js](/c:/Users/User/Documents/GitHub/csd-game-jam/src/scenes/LevelEditorScene.js): first custom level editor and play-test engine
 - [src/scenes/SandboxScene.js](/c:/Users/User/Documents/GitHub/csd-game-jam/src/scenes/SandboxScene.js): practice room plus user-level popup flow
 - [src/state/progress.js](/c:/Users/User/Documents/GitHub/csd-game-jam/src/state/progress.js): unlock persistence and selected-level state
+- [src/state/userLevels.js](/c:/Users/User/Documents/GitHub/csd-game-jam/src/state/userLevels.js): custom level storage, migration, and normalization
 - [src/storyboard.js](/c:/Users/User/Documents/GitHub/csd-game-jam/src/storyboard.js): intro and ending comic-panel overlays
 
 ## Asset Overview
@@ -211,8 +219,8 @@ The repository includes:
 The project is playable, but a few areas are still clearly in-progress:
 
 - no automated tests
-- no full level editor yet
-- saved custom levels are metadata-first and not yet playable
+- the level editor is first-version only, with no drag handles, resizing controls, or export/import UI yet
+- custom levels are local-only and not part of campaign progression yet
 - README-level asset attribution is still broad rather than source-by-source
 
 ## License

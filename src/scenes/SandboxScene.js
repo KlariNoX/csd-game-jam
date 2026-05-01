@@ -21,8 +21,11 @@ import {
   preloadLevelBackgroundIfNeeded,
   preloadPyramidRuinsAssetsIfNeeded
 } from '../ui/backgrounds.js';
-
-const USER_LEVELS_STORAGE_KEY = "crab-out-of-nile-user-levels";
+import {
+  createUserLevel,
+  loadSavedUserLevels as loadStoredUserLevels,
+  saveUserLevels as saveStoredUserLevels
+} from '../state/userLevels.js';
 
 // Sandbox scene: a small no-progress practice room for movement and physics toys.
 export class SandboxScene extends Phaser.Scene {
@@ -150,29 +153,11 @@ export class SandboxScene extends Phaser.Scene {
   }
 
   loadSavedUserLevels() {
-    try {
-      const savedLevels = JSON.parse(window.localStorage.getItem(USER_LEVELS_STORAGE_KEY) || "[]");
-
-      if (!Array.isArray(savedLevels)) {
-        return [];
-      }
-
-      return savedLevels.map((level, index) => ({
-        id: level.id || `level-${index}`,
-        name: level.name || level.title || `Untitled Level ${index + 1}`,
-        ...level
-      }));
-    } catch {
-      return [];
-    }
+    return loadStoredUserLevels();
   }
 
   saveUserLevels(levels) {
-    try {
-      window.localStorage.setItem(USER_LEVELS_STORAGE_KEY, JSON.stringify(levels));
-    } catch {
-      // If storage is blocked, the popup still works for the current view.
-    }
+    saveStoredUserLevels(levels);
   }
 
   showMyLevelsPopup() {
@@ -287,7 +272,7 @@ export class SandboxScene extends Phaser.Scene {
           .setOrigin(0, 0.5)
           .setDepth(124);
         const openButton = createTextButton(this, listBounds.x + 232, y, "Open", () => {
-          // Level loading will hook in here when the custom level engine exists.
+          this.scene.start("LevelEditorScene", { levelId: level.id, mode: "edit" });
         }, 58, { variant: "secondary" }).setDepth(126);
         const deleteButton = createTextButton(this, listBounds.x + 304, y, "Delete", () => {
           deleteLevel(level.id);
@@ -524,27 +509,13 @@ export class SandboxScene extends Phaser.Scene {
     };
     const createLevel = () => {
       const trimmedName = levelName.trim() || `Untitled Level ${this.loadSavedUserLevels().length + 1}`;
-      const now = new Date().toISOString();
-      const newLevel = {
-        id: `user-level-${Date.now()}`,
-        name: trimmedName,
-        backgroundIndex: selectedBackgroundIndex,
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-        layout: {
-          solids: [],
-          hazards: [],
-          objects: [],
-          playerStart: { x: 42, y: 198 }
-        }
-      };
+      const newLevel = createUserLevel(trimmedName, selectedBackgroundIndex, this.loadSavedUserLevels().length);
       const savedLevels = [...this.loadSavedUserLevels(), newLevel];
 
       this.saveUserLevels(savedLevels);
       closePopup();
       onCreated?.(newLevel);
-      // The actual level editor scene will start from here once it exists.
+      this.scene.start("LevelEditorScene", { levelId: newLevel.id, mode: "edit" });
     };
     const createButton = createTextButton(this, centerX - 68, panelY + 198, "Create", createLevel, 112, {
       variant: "danger"
