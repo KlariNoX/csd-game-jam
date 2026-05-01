@@ -16,10 +16,13 @@ import { addCrtOverlay, addSceneTitle, createTextButton, drawPixelDialogFrame } 
 import {
   addLevelBackground,
   ensureCrabAnimations,
+  getLevelBackground,
   preloadCrabSpritesheetIfNeeded,
   preloadLevelBackgroundIfNeeded,
   preloadPyramidRuinsAssetsIfNeeded
 } from '../ui/backgrounds.js';
+
+const USER_LEVELS_STORAGE_KEY = "crab-out-of-nile-user-levels";
 
 // Sandbox scene: a small no-progress practice room for movement and physics toys.
 export class SandboxScene extends Phaser.Scene {
@@ -28,7 +31,9 @@ export class SandboxScene extends Phaser.Scene {
   }
 
   preload() {
-    preloadLevelBackgroundIfNeeded(this, 0);
+    for (let backgroundIndex = 0; backgroundIndex < 5; backgroundIndex += 1) {
+      preloadLevelBackgroundIfNeeded(this, backgroundIndex);
+    }
     preloadPyramidRuinsAssetsIfNeeded(this);
     preloadCrabSpritesheetIfNeeded(this);
   }
@@ -130,7 +135,7 @@ export class SandboxScene extends Phaser.Scene {
     };
 
     const myLevelsButton = createTextButton(this, centerX - 138, panelY + 188, "My Levels", () => {
-      // Placeholder for custom levels. The button is intentionally present but inactive for now.
+      this.showMyLevelsPopup();
     }, 112, { variant: "secondary" }).setDepth(96);
     const practiceButton = createTextButton(this, centerX, panelY + 188, "Practice", () => {
       closePopup();
@@ -142,6 +147,416 @@ export class SandboxScene extends Phaser.Scene {
 
     popupObjects.push(myLevelsButton, practiceButton, backButton);
     this.sandboxMenuPopupObjects = popupObjects;
+  }
+
+  loadSavedUserLevels() {
+    try {
+      const savedLevels = JSON.parse(window.localStorage.getItem(USER_LEVELS_STORAGE_KEY) || "[]");
+
+      if (!Array.isArray(savedLevels)) {
+        return [];
+      }
+
+      return savedLevels.map((level, index) => ({
+        id: level.id || `level-${index}`,
+        name: level.name || level.title || `Untitled Level ${index + 1}`,
+        ...level
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  saveUserLevels(levels) {
+    try {
+      window.localStorage.setItem(USER_LEVELS_STORAGE_KEY, JSON.stringify(levels));
+    } catch {
+      // If storage is blocked, the popup still works for the current view.
+    }
+  }
+
+  showMyLevelsPopup() {
+    if (this.myLevelsPopupObjects?.length) {
+      return;
+    }
+
+    const panelWidth = 420;
+    const panelHeight = 232;
+    const panelX = (GAME_WIDTH - panelWidth) / 2;
+    const panelY = (GAME_HEIGHT - panelHeight) / 2;
+    const centerX = GAME_WIDTH / 2;
+    const popupObjects = [];
+    let listObjects = [];
+    let savedLevels = this.loadSavedUserLevels();
+    let listScroll = 0;
+    const listBounds = {
+      x: panelX + 38,
+      y: panelY + 78,
+      width: panelWidth - 76,
+      height: 102
+    };
+    const rowHeight = 32;
+
+    const blocker = this.add
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x070302, 0.78)
+      .setDepth(100)
+      .setInteractive();
+
+    popupObjects.push(blocker);
+    popupObjects.push(drawPixelDialogFrame(this, panelX, panelY, panelWidth, panelHeight, 110));
+
+    const titlePlate = this.add.graphics().setDepth(111);
+    titlePlate.fillStyle(0x090403, 1);
+    titlePlate.fillRect(centerX - 98, panelY + 18, 196, 38);
+    titlePlate.fillStyle(0x5c3218, 1);
+    titlePlate.fillRect(centerX - 90, panelY + 24, 180, 26);
+    titlePlate.fillStyle(COLOR_VALUES.gold, 1);
+    titlePlate.fillRect(centerX - 84, panelY + 27, 168, 3);
+    titlePlate.fillRect(centerX - 84, panelY + 47, 168, 3);
+    titlePlate.fillStyle(0xffefad, 0.34);
+    titlePlate.fillRect(centerX - 74, panelY + 31, 148, 1);
+
+    const title = this.add
+      .text(centerX, panelY + 38, "My Levels", {
+        fontFamily: FONTS.title,
+        fontSize: "21px",
+        color: COLORS.gold,
+        stroke: "#120905",
+        strokeThickness: 4
+      })
+      .setOrigin(0.5)
+      .setDepth(124);
+
+    const listFrame = this.add.graphics().setDepth(111);
+    listFrame.fillStyle(0x090403, 1);
+    listFrame.fillRect(listBounds.x - 4, listBounds.y - 4, listBounds.width + 8, listBounds.height + 8);
+    listFrame.fillStyle(0x0d0603, 0.96);
+    listFrame.fillRect(listBounds.x, listBounds.y, listBounds.width, listBounds.height);
+    listFrame.lineStyle(2, 0x2a1409, 1);
+    listFrame.strokeRect(listBounds.x, listBounds.y, listBounds.width, listBounds.height);
+
+    popupObjects.push(titlePlate, title, listFrame);
+
+    const clearListObjects = () => {
+      listObjects.forEach((object) => object.destroy());
+      listObjects = [];
+    };
+    const getMaxScroll = () => Math.max(0, savedLevels.length * rowHeight - (listBounds.height - 12));
+    const deleteLevel = (levelId) => {
+      savedLevels = savedLevels.filter((level) => level.id !== levelId);
+      this.saveUserLevels(savedLevels);
+      listScroll = Phaser.Math.Clamp(listScroll, 0, getMaxScroll());
+      renderList();
+    };
+    const renderList = () => {
+      clearListObjects();
+
+      if (savedLevels.length === 0) {
+        listObjects.push(
+          this.add
+            .text(centerX, listBounds.y + listBounds.height / 2, "No saved levels yet.", {
+              ...LABEL_STYLE,
+              fontSize: "12px",
+              color: "#fff4d0",
+              align: "center"
+            })
+            .setOrigin(0.5)
+            .setDepth(124)
+        );
+        return;
+      }
+
+      savedLevels.forEach((level, index) => {
+        const y = listBounds.y + 18 + index * rowHeight - listScroll;
+
+        if (y < listBounds.y + 8 || y > listBounds.y + listBounds.height - 10) {
+          return;
+        }
+
+        const rowLine = this.add.graphics().setDepth(121);
+        rowLine.fillStyle(0x32190c, 0.7);
+        rowLine.fillRect(listBounds.x + 8, y + 15, listBounds.width - 16, 1);
+
+        const nameText = this.add
+          .text(listBounds.x + 12, y, level.name, {
+            fontFamily: FONTS.ui,
+            fontSize: "11px",
+            color: COLORS.gold,
+            wordWrap: { width: 164, useAdvancedWrap: true }
+          })
+          .setOrigin(0, 0.5)
+          .setDepth(124);
+        const openButton = createTextButton(this, listBounds.x + 232, y, "Open", () => {
+          // Level loading will hook in here when the custom level engine exists.
+        }, 58, { variant: "secondary" }).setDepth(126);
+        const deleteButton = createTextButton(this, listBounds.x + 304, y, "Delete", () => {
+          deleteLevel(level.id);
+        }, 66, { variant: "danger" }).setDepth(126);
+
+        listObjects.push(rowLine, nameText, openButton, deleteButton);
+      });
+    };
+    const handleWheel = (_pointer, _gameObjects, _deltaX, deltaY) => {
+      const maxScroll = getMaxScroll();
+
+      if (maxScroll <= 0) {
+        return;
+      }
+
+      listScroll = Phaser.Math.Clamp(listScroll + Math.sign(deltaY) * 18, 0, maxScroll);
+      renderList();
+    };
+    const closePopup = () => {
+      this.input.off("wheel", handleWheel);
+      this.events.off("shutdown", closePopup);
+      listObjects.forEach((object) => object.destroy());
+      popupObjects.forEach((object) => object.destroy());
+      this.myLevelsPopupObjects = [];
+    };
+    const createButton = createTextButton(this, centerX - 78, panelY + 206, "Create New Level", () => {
+      this.showCreateLevelPopup(() => {
+        savedLevels = this.loadSavedUserLevels();
+        listScroll = Phaser.Math.Clamp(listScroll, 0, getMaxScroll());
+        renderList();
+      });
+    }, 158, { variant: "danger" }).setDepth(126);
+    const backButton = createTextButton(this, centerX + 112, panelY + 206, "Back", closePopup, 104, {
+      variant: "secondary"
+    }).setDepth(126);
+
+    popupObjects.push(createButton, backButton);
+    this.myLevelsPopupObjects = popupObjects;
+    this.input.on("wheel", handleWheel);
+    this.events.once("shutdown", closePopup);
+    renderList();
+  }
+
+  showCreateLevelPopup(onCreated) {
+    if (this.createLevelPopupObjects?.length) {
+      return;
+    }
+
+    const panelWidth = 392;
+    const panelHeight = 224;
+    const panelX = (GAME_WIDTH - panelWidth) / 2;
+    const panelY = (GAME_HEIGHT - panelHeight) / 2;
+    const centerX = GAME_WIDTH / 2;
+    const popupObjects = [];
+    let levelName = "";
+    let selectedBackgroundIndex = 0;
+    let isNameFieldFocused = true;
+    const nameMaxLength = 24;
+    const backgroundButtons = [];
+
+    const blocker = this.add
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x070302, 0.82)
+      .setDepth(130)
+      .setInteractive();
+
+    popupObjects.push(blocker);
+    popupObjects.push(drawPixelDialogFrame(this, panelX, panelY, panelWidth, panelHeight, 140));
+
+    const titlePlate = this.add.graphics().setDepth(141);
+    titlePlate.fillStyle(0x090403, 1);
+    titlePlate.fillRect(centerX - 116, panelY + 18, 232, 38);
+    titlePlate.fillStyle(0x5c3218, 1);
+    titlePlate.fillRect(centerX - 108, panelY + 24, 216, 26);
+    titlePlate.fillStyle(COLOR_VALUES.gold, 1);
+    titlePlate.fillRect(centerX - 102, panelY + 27, 204, 3);
+    titlePlate.fillRect(centerX - 102, panelY + 47, 204, 3);
+    titlePlate.fillStyle(0xffefad, 0.34);
+    titlePlate.fillRect(centerX - 88, panelY + 31, 176, 1);
+    popupObjects.push(titlePlate);
+
+    const title = this.add
+      .text(centerX, panelY + 38, "Create Level", {
+        fontFamily: FONTS.title,
+        fontSize: "20px",
+        color: COLORS.gold,
+        stroke: "#120905",
+        strokeThickness: 4
+      })
+      .setOrigin(0.5)
+      .setDepth(154);
+    const nameLabel = this.add
+      .text(panelX + 48, panelY + 76, "Level name", {
+        fontFamily: FONTS.ui,
+        fontSize: "11px",
+        color: COLORS.gold
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(154);
+    const nameBox = this.add.graphics().setDepth(142);
+    const nameText = this.add
+      .text(panelX + 52, panelY + 101, "", {
+        fontFamily: FONTS.ui,
+        fontSize: "12px",
+        color: "#fff4d0"
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(154);
+    const nameHitZone = this.add
+      .zone(panelX + panelWidth / 2, panelY + 101, panelWidth - 88, 30)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(155);
+    const hintText = this.add
+      .text(panelX + 48, panelY + 125, "Choose background", {
+        fontFamily: FONTS.ui,
+        fontSize: "11px",
+        color: COLORS.gold
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(154);
+
+    popupObjects.push(title, nameLabel, nameBox, nameText, nameHitZone, hintText);
+
+    const paintNameBox = () => {
+      const trimColor = isNameFieldFocused ? COLOR_VALUES.gold : 0x8b6631;
+      const displayName = levelName || (isNameFieldFocused ? "|" : "Type a name...");
+
+      nameBox.clear();
+      nameBox.fillStyle(0x090403, 1);
+      nameBox.fillRect(panelX + 44, panelY + 86, panelWidth - 88, 30);
+      nameBox.fillStyle(0x3a2415, 1);
+      nameBox.fillRect(panelX + 48, panelY + 90, panelWidth - 96, 22);
+      nameBox.fillStyle(trimColor, 1);
+      nameBox.fillRect(panelX + 50, panelY + 91, panelWidth - 100, 2);
+      nameBox.fillRect(panelX + 50, panelY + 109, panelWidth - 100, 2);
+      nameText.setText(levelName && isNameFieldFocused ? `${levelName}|` : displayName);
+      nameText.setColor(levelName || isNameFieldFocused ? "#fff4d0" : "#9b8660");
+    };
+    const paintBackgroundChoices = () => {
+      backgroundButtons.forEach(({ frame, index }) => {
+        frame.clear();
+        frame.fillStyle(index === selectedBackgroundIndex ? COLOR_VALUES.gold : 0x6d4416, 1);
+        frame.fillRect(-2, -2, 56, 34);
+        frame.fillStyle(0x090403, 1);
+        frame.fillRect(1, 1, 50, 28);
+      });
+    };
+
+    paintNameBox();
+    nameHitZone
+      .on("pointerover", () => {
+        playSoundCue(this, "ui-hover");
+      })
+      .on("pointerdown", () => {
+        playSoundCue(this, "ui-click");
+        isNameFieldFocused = true;
+        paintNameBox();
+      });
+
+    for (let index = 0; index < 5; index += 1) {
+      const x = panelX + 52 + index * 60;
+      const y = panelY + 140;
+      const background = getLevelBackground(index);
+      const choice = this.add.container(x, y).setDepth(154);
+      const frame = this.add.graphics();
+      const thumbnail = this.textures.exists(background.key)
+        ? this.add.image(26, 15, background.key).setDisplaySize(48, 26)
+        : this.add.rectangle(26, 15, 48, 26, 0x5c3820);
+      const number = this.add
+        .text(26, 15, `${index + 1}`, {
+          fontFamily: FONTS.ui,
+          fontSize: "12px",
+          color: "#fff4d0",
+          stroke: "#120905",
+          strokeThickness: 3
+        })
+        .setOrigin(0.5);
+      const hitZone = this.add
+        .zone(26, 15, 56, 34)
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+
+      choice.add([frame, thumbnail, number, hitZone]);
+      backgroundButtons.push({ frame, index });
+      popupObjects.push(choice);
+      hitZone
+        .on("pointerover", () => {
+          playSoundCue(this, "ui-hover");
+        })
+        .on("pointerdown", () => {
+          playSoundCue(this, "ui-click");
+          isNameFieldFocused = false;
+          selectedBackgroundIndex = index;
+          paintNameBox();
+          paintBackgroundChoices();
+        });
+    }
+    paintBackgroundChoices();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closePopup();
+        return;
+      }
+
+      if (!isNameFieldFocused) {
+        return;
+      }
+
+      if (event.key === "Backspace") {
+        event.preventDefault();
+        levelName = levelName.slice(0, -1);
+        paintNameBox();
+        return;
+      }
+
+      if (event.key === "Enter") {
+        event.preventDefault();
+        createLevel();
+        return;
+      }
+
+      if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && levelName.length < nameMaxLength) {
+        event.preventDefault();
+        levelName += event.key;
+        paintNameBox();
+      }
+    };
+    const closePopup = () => {
+      this.input.keyboard?.off("keydown", handleKeyDown);
+      this.events.off("shutdown", closePopup);
+      popupObjects.forEach((object) => object.destroy());
+      this.createLevelPopupObjects = [];
+    };
+    const createLevel = () => {
+      const trimmedName = levelName.trim() || `Untitled Level ${this.loadSavedUserLevels().length + 1}`;
+      const now = new Date().toISOString();
+      const newLevel = {
+        id: `user-level-${Date.now()}`,
+        name: trimmedName,
+        backgroundIndex: selectedBackgroundIndex,
+        createdAt: now,
+        updatedAt: now,
+        version: 1,
+        layout: {
+          solids: [],
+          hazards: [],
+          objects: [],
+          playerStart: { x: 42, y: 198 }
+        }
+      };
+      const savedLevels = [...this.loadSavedUserLevels(), newLevel];
+
+      this.saveUserLevels(savedLevels);
+      closePopup();
+      onCreated?.(newLevel);
+      // The actual level editor scene will start from here once it exists.
+    };
+    const createButton = createTextButton(this, centerX - 68, panelY + 198, "Create", createLevel, 112, {
+      variant: "danger"
+    }).setDepth(156);
+    const cancelButton = createTextButton(this, centerX + 68, panelY + 198, "Cancel", closePopup, 112, {
+      variant: "secondary"
+    }).setDepth(156);
+
+    popupObjects.push(createButton, cancelButton);
+    this.createLevelPopupObjects = popupObjects;
+    this.input.keyboard?.on("keydown", handleKeyDown);
+    this.events.once("shutdown", closePopup);
   }
 
   startPracticeLevel() {
