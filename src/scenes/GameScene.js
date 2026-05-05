@@ -1595,6 +1595,7 @@ export class GameScene extends Phaser.Scene {
 
     this.time.delayedCall(720, () => {
       if (this.currentLevelIndex === TOTAL_LEVELS - 1) {
+        playBackgroundMusic(this, null);
         playEndingStoryboardThenStartWin(this);
         return;
       }
