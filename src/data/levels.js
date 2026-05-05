@@ -41,13 +41,13 @@ export const LEVELS = [
     spikes: [
       // Downward spikes hang from the unreachable shelf for atmosphere and danger readability.
       { x: 68, y: 102, width: 58, direction: "down" },
-      { x: 72, y: 207, width: 20 },
-      { x: 146, y: 207, width: 18 },
-      { x: 208, y: 207, width: 24 },
+      { x: 66, y: 207, width: 22 },
+      { x: 156, y: 207, width: 10 },
+      { x: 218, y: 207, width: 24 },
       { x: 296, y: 207, width: 28 },
       { x: 354, y: 207, width: 22 },
       // A small edge trap makes the exit approach more deliberate without requiring a perfect jump.
-      { x: 338, y: 166, width: 16 }
+      { x: 348, y: 166, width: 12 }
     ]
   },
   {
@@ -205,7 +205,7 @@ export const LEVELS = [
       requiredSwitchCount: 2,
       switches: [
         // First seal must be held by the left box.
-        { id: "lower-box-seal", x: 108, y: 200, width: 32, height: 8, activation: "box" },
+        { id: "lower-box-seal", x: 108, y: 205, width: 32, height: 8, activation: "box" },
 
         // Second seal is reached through the upper blade route.
         { id: "upper-seal", x: 326, y: 114, width: 30, height: 8 }

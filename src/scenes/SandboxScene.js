@@ -50,6 +50,8 @@ export class SandboxScene extends Phaser.Scene {
     this.staticSolids = [];
     this.movingPlatforms = [];
     this.ridingMovingPlatform = null;
+    this.lastGroundedAt = 0;
+    this.jumpQueuedUntil = 0;
 
     this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
     this.cameras.main.setBackgroundColor("#120d07");
@@ -540,6 +542,8 @@ export class SandboxScene extends Phaser.Scene {
     this.staticSolids = [];
     this.movingPlatforms = [];
     this.ridingMovingPlatform = null;
+    this.lastGroundedAt = 0;
+    this.jumpQueuedUntil = 0;
 
     addSceneTitle(this, "Sandbox", "Practice movement without progress or timers", 56);
 
@@ -837,6 +841,7 @@ export class SandboxScene extends Phaser.Scene {
 
   isPlayerOverPlatform(platform, platformCenterX = platform.bodyObject.x) {
     const body = this.player.body;
+    const platformVelocityY = platform.bodyObject.body?.velocity.y || 0;
     const platformLeft = platformCenterX - platform.width / 2;
     const platformRight = platformCenterX + platform.width / 2;
     const platformTop = platform.bodyObject.y - platform.height / 2;
@@ -848,8 +853,42 @@ export class SandboxScene extends Phaser.Scene {
       playerCenterX <= platformRight - 4 &&
       playerBottom >= platformTop - 8 &&
       playerBottom <= platformTop + 8 &&
-      body.velocity.y >= -8
+      body.velocity.y >= Math.min(-8, platformVelocityY - 28)
     );
+  }
+
+  isRidingMovingPlatform() {
+    const platform = this.ridingMovingPlatform;
+
+    if (!platform || this.time.now - (platform.riderSeenAt || 0) > 180) {
+      return false;
+    }
+
+    return this.isPlayerOverPlatform(platform);
+  }
+
+  isPlayerGrounded() {
+    const onGround =
+      this.player.body.blocked.down ||
+      this.player.body.touching.down ||
+      this.isRidingMovingPlatform();
+
+    if (onGround) {
+      this.lastGroundedAt = this.time.now;
+    }
+
+    return onGround;
+  }
+
+  canUseGroundJump() {
+    return this.isPlayerGrounded() || this.time.now - this.lastGroundedAt <= 120;
+  }
+
+  clearMovingPlatformRide() {
+    if (this.ridingMovingPlatform) {
+      this.ridingMovingPlatform.riderSeenAt = 0;
+      this.ridingMovingPlatform = null;
+    }
   }
 
   isHorizontalMoveInputDown() {
@@ -879,6 +918,7 @@ export class SandboxScene extends Phaser.Scene {
 
     this.player.setPosition(nextPlayerX, this.player.y);
     this.player.body.updateFromGameObject();
+    platform.riderSeenAt = this.time.now;
   }
 
   createPushBlock() {
@@ -941,7 +981,10 @@ export class SandboxScene extends Phaser.Scene {
       Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
       Phaser.Input.Keyboard.JustDown(this.keys.W) ||
       Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
-    const onGround = this.player.body.blocked.down || this.player.body.touching.down;
+
+    if (jumpPressed) {
+      this.jumpQueuedUntil = this.time.now + 120;
+    }
 
     if (moveLeft === moveRight) {
       this.player.setVelocityX(0);
@@ -953,7 +996,10 @@ export class SandboxScene extends Phaser.Scene {
       this.facingDirection = 1;
     }
 
-    if (jumpPressed && onGround) {
+    if (this.jumpQueuedUntil >= this.time.now && this.canUseGroundJump()) {
+      this.jumpQueuedUntil = 0;
+      this.lastGroundedAt = 0;
+      this.clearMovingPlatformRide();
       this.player.setVelocityY(-320);
       playSoundCue(this, "jump");
     }
@@ -962,7 +1008,7 @@ export class SandboxScene extends Phaser.Scene {
   }
 
   updatePlayerAnimation(time) {
-    const onGround = this.player.body.blocked.down || this.player.body.touching.down;
+    const onGround = this.isPlayerGrounded();
     const horizontalSpeed = Math.abs(this.player.body.velocity.x);
     let nextAnim = "crab-idle";
 

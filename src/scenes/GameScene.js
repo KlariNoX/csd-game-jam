@@ -55,6 +55,8 @@ export class GameScene extends Phaser.Scene {
     this.crushers = [];
     this.movingPlatforms = [];
     this.ridingMovingPlatform = null;
+    this.lastGroundedAt = 0;
+    this.jumpQueuedUntil = 0;
     this.pushBoxes = [];
     this.staticSolids = [];
     this.puzzleState = this.createPuzzleState(this.currentLevel);
@@ -1157,6 +1159,7 @@ export class GameScene extends Phaser.Scene {
 
     const body = this.player.body;
     const { width, height } = movingPlatform;
+    const platformVelocityY = movingPlatform.bodyObject.body?.velocity.y || 0;
     const platformLeft = platformCenterX - width / 2;
     const platformRight = platformCenterX + width / 2;
     const platformTop = platformCenterY - height / 2;
@@ -1168,9 +1171,43 @@ export class GameScene extends Phaser.Scene {
     const feetAreOnTop =
       playerBottom >= platformTop - 8 &&
       playerBottom <= platformTop + 8;
-    const isFallingOrResting = body.velocity.y >= -8;
+    const isFallingOrRidingUp = body.velocity.y >= Math.min(-8, platformVelocityY - 28);
 
-    return centerIsOnPlatform && feetAreOnTop && isFallingOrResting;
+    return centerIsOnPlatform && feetAreOnTop && isFallingOrRidingUp;
+  }
+
+  isRidingMovingPlatform() {
+    const movingPlatform = this.ridingMovingPlatform;
+
+    if (!movingPlatform || this.time.now - (movingPlatform.riderSeenAt || 0) > 180) {
+      return false;
+    }
+
+    return this.isPlayerOverMovingPlatform(movingPlatform);
+  }
+
+  isPlayerGrounded() {
+    const onGround =
+      this.player.body.blocked.down ||
+      this.player.body.touching.down ||
+      this.isRidingMovingPlatform();
+
+    if (onGround) {
+      this.lastGroundedAt = this.time.now;
+    }
+
+    return onGround;
+  }
+
+  canUseGroundJump() {
+    return this.isPlayerGrounded() || this.time.now - this.lastGroundedAt <= 120;
+  }
+
+  clearMovingPlatformRide() {
+    if (this.ridingMovingPlatform) {
+      this.ridingMovingPlatform.riderSeenAt = 0;
+      this.ridingMovingPlatform = null;
+    }
   }
 
   isHorizontalMoveInputDown() {
@@ -1204,6 +1241,7 @@ export class GameScene extends Phaser.Scene {
 
     this.player.setPosition(nextPlayerX, nextPlayerY);
     this.player.body.updateFromGameObject();
+    movingPlatform.riderSeenAt = this.time.now;
   }
 
   createPushBoxes(boxes) {
@@ -1659,7 +1697,10 @@ export class GameScene extends Phaser.Scene {
       Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
       Phaser.Input.Keyboard.JustDown(this.keys.W) ||
       Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
-    const onGround = this.player.body.blocked.down || this.player.body.touching.down;
+
+    if (jumpPressed) {
+      this.jumpQueuedUntil = this.time.now + 120;
+    }
 
     if (moveLeft === moveRight) {
       this.player.setVelocityX(0);
@@ -1671,7 +1712,10 @@ export class GameScene extends Phaser.Scene {
       this.facingDirection = 1;
     }
 
-    if (jumpPressed && onGround) {
+    if (this.jumpQueuedUntil >= this.time.now && this.canUseGroundJump()) {
+      this.jumpQueuedUntil = 0;
+      this.lastGroundedAt = 0;
+      this.clearMovingPlatformRide();
       this.player.setVelocityY(-320);
       playSoundCue(this, "jump");
     }
@@ -1680,7 +1724,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   updatePlayerAnimation(time) {
-    const onGround = this.player.body.blocked.down || this.player.body.touching.down;
+    const onGround = this.isPlayerGrounded();
     const horizontalSpeed = Math.abs(this.player.body.velocity.x);
     let nextAnim = "crab-idle";
 
