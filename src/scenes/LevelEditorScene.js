@@ -26,13 +26,18 @@ const GRID_SIZE = 8;
 const EDIT_AREA_TOP = 38;
 const EDIT_AREA_BOTTOM = 236;
 const RESIZE_HANDLE_RADIUS = 10;
-const TOOL_BUTTON_WIDTH = 50;
+const RANGE_HANDLE_RADIUS = 9;
+const TOOL_BUTTON_WIDTH = 43;
 const TOOL_BUTTON_HEIGHT = 24;
+const TOOL_BUTTON_GAP = 47;
+const MOVING_PLATFORM_TRAVEL_DISTANCE = 48;
 
 const EDITOR_TOOLS = [
   { id: "floor", label: "Floor" },
   { id: "ledge", label: "Ledge" },
-  { id: "movingPlatform", label: "Plat" },
+  { id: "pillar", label: "Pillar" },
+  { id: "movingPlatformHorizontal", label: "H Plat" },
+  { id: "movingPlatformVertical", label: "V Plat" },
   { id: "spike", label: "Spike" },
   { id: "block", label: "Block" },
   { id: "goal", label: "Exit" },
@@ -94,6 +99,7 @@ export class LevelEditorScene extends Phaser.Scene {
     this.selectedEditorTarget = null;
     this.dragState = null;
     this.resizeState = null;
+    this.rangeState = null;
 
     this.registry.set("selectedUserLevelId", this.level.id);
     this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -118,11 +124,11 @@ export class LevelEditorScene extends Phaser.Scene {
       this.handleEditorPointerDown = (pointer) => this.onEditorPointerDown(pointer);
       this.handleEditorPointerMove = (pointer) => this.onEditorPointerMove(pointer);
       this.handleEditorPointerUp = () => this.onEditorPointerUp();
-      this.handleFlipSpike = () => this.flipSelectedSpike();
+      this.handleAdjustSelectedObject = () => this.adjustSelectedObject();
       this.input.on("pointerdown", this.handleEditorPointerDown);
       this.input.on("pointermove", this.handleEditorPointerMove);
       this.input.on("pointerup", this.handleEditorPointerUp);
-      this.input.keyboard?.on("keydown-R", this.handleFlipSpike);
+      this.input.keyboard?.on("keydown-R", this.handleAdjustSelectedObject);
     }
 
     this.handleEscape = () => {
@@ -139,7 +145,7 @@ export class LevelEditorScene extends Phaser.Scene {
         this.input.off("pointerdown", this.handleEditorPointerDown);
         this.input.off("pointermove", this.handleEditorPointerMove);
         this.input.off("pointerup", this.handleEditorPointerUp);
-        this.input.keyboard?.off("keydown-R", this.handleFlipSpike);
+        this.input.keyboard?.off("keydown-R", this.handleAdjustSelectedObject);
       }
 
       this.input.keyboard?.off("keydown-ESC", this.handleEscape);
@@ -161,7 +167,7 @@ export class LevelEditorScene extends Phaser.Scene {
       this.saveCurrentLevel();
     }, 72).setDepth(60);
 
-    createTextButton(this, 424, 20, this.mode === "play" ? "Edit" : "Test", () => {
+    createTextButton(this, 424, 20, this.mode === "play" ? "Edit" : "Play", () => {
       if (this.mode === "play") {
         this.scene.restart({ levelId: this.level.id, mode: "edit" });
         return;
@@ -198,15 +204,15 @@ export class LevelEditorScene extends Phaser.Scene {
     this.showStatus(
       this.mode === "play"
         ? "Play test: reach the exit. Esc returns to editor."
-        : "Click empty grid to place. Drag objects or corner boxes."
+        : "Click empty grid to place. R flips spikes or platform direction."
     );
   }
 
   drawToolPalette() {
-    const startX = 51;
+    const startX = 28;
 
     EDITOR_TOOLS.forEach((tool, index) => {
-      const button = this.createToolButton(startX + index * 54, 252, tool);
+      const button = this.createToolButton(startX + index * TOOL_BUTTON_GAP, 252, tool);
 
       this.toolButtons.push(button);
     });
@@ -296,9 +302,21 @@ export class LevelEditorScene extends Phaser.Scene {
         this.selectedEditorTarget = null;
         this.dragState = null;
         this.resizeState = null;
+        this.rangeState = null;
         this.markDirty("Removed object.");
         this.renderEditor();
       }
+      return;
+    }
+
+    const rangeHandle = this.findPlatformRangeHandleAt(pointer.x, pointer.y);
+
+    if (rangeHandle) {
+      playSoundCue(this, "ui-click");
+      this.rangeState = this.createRangeState(rangeHandle);
+      this.resizeState = null;
+      this.dragState = null;
+      this.showStatus("Drag the platform end marker to change travel range.", COLORS.gold);
       return;
     }
 
@@ -307,6 +325,7 @@ export class LevelEditorScene extends Phaser.Scene {
     if (resizeHandle) {
       playSoundCue(this, "ui-click");
       this.resizeState = this.createResizeState(resizeHandle);
+      this.rangeState = null;
       this.dragState = null;
       this.showStatus("Resize selected object by dragging the corner.", COLORS.gold);
       return;
@@ -323,12 +342,8 @@ export class LevelEditorScene extends Phaser.Scene {
       this.selectedEditorTarget = target;
       this.dragState = this.createDragState(target, pointer.x, pointer.y);
       this.resizeState = null;
-      this.showStatus(
-        this.isSpikeTarget(target)
-          ? "Selected spike. Drag it, or press R to flip."
-          : "Selected object. Drag it around the grid.",
-        COLORS.gold
-      );
+      this.rangeState = null;
+      this.showStatus(this.getSelectionHelpText(target), COLORS.gold);
       this.renderEditor();
       return;
     }
@@ -337,10 +352,19 @@ export class LevelEditorScene extends Phaser.Scene {
     const y = this.snapToGrid(pointer.y);
 
     this.selectedEditorTarget = null;
+    this.rangeState = null;
     this.applyToolAt(x, y, pointer.x, pointer.y);
   }
 
   onEditorPointerMove(pointer) {
+    if (this.rangeState && pointer.isDown) {
+      if (this.movePlatformRangeHandle(pointer.x, pointer.y)) {
+        this.rangeState.moved = true;
+        this.renderEditor();
+      }
+      return;
+    }
+
     if (this.resizeState && pointer.isDown) {
       if (this.resizeSelectedTarget(pointer.x, pointer.y)) {
         this.resizeState.moved = true;
@@ -360,6 +384,16 @@ export class LevelEditorScene extends Phaser.Scene {
   }
 
   onEditorPointerUp() {
+    if (this.rangeState) {
+      if (this.rangeState.moved) {
+        this.markDirty("Changed platform travel range. Save when ready.");
+        this.renderEditor();
+      }
+
+      this.rangeState = null;
+      return;
+    }
+
     if (this.resizeState) {
       if (this.resizeState.moved) {
         this.markDirty("Resized object. Save when ready.");
@@ -384,6 +418,22 @@ export class LevelEditorScene extends Phaser.Scene {
 
   isSpikeTarget(target) {
     return target?.kind === "hazard" && target.item?.type === "spike";
+  }
+
+  isMovingPlatformTarget(target) {
+    return target?.kind === "object" && target.item?.type === "movingPlatform";
+  }
+
+  getSelectionHelpText(target) {
+    if (this.isSpikeTarget(target)) {
+      return "Selected spike. Drag it, or press R to flip.";
+    }
+
+    if (this.isMovingPlatformTarget(target)) {
+      return "Selected platform. Drag gold end markers for range. Press R for direction.";
+    }
+
+    return "Selected object. Drag it around the grid.";
   }
 
   canResizeTarget(target = this.selectedEditorTarget) {
@@ -438,6 +488,41 @@ export class LevelEditorScene extends Phaser.Scene {
     )) || null;
   }
 
+  getPlatformRangePoints(platform) {
+    return [
+      {
+        endpoint: "from",
+        x: (platform.fromX ?? platform.x) + platform.width / 2,
+        y: (platform.fromY ?? platform.y) + platform.height / 2
+      },
+      {
+        endpoint: "to",
+        x: (platform.toX ?? platform.x) + platform.width / 2,
+        y: (platform.toY ?? platform.y) + platform.height / 2
+      }
+    ];
+  }
+
+  findPlatformRangeHandleAt(x, y) {
+    if (!this.isMovingPlatformTarget(this.selectedEditorTarget)) {
+      return null;
+    }
+
+    const platform = this.selectedEditorTarget.item;
+
+    return this.getPlatformRangePoints(platform).find((point) => (
+      Phaser.Math.Distance.Between(x, y, point.x, point.y) <= RANGE_HANDLE_RADIUS
+    )) || null;
+  }
+
+  createRangeState(handle) {
+    return {
+      platform: this.selectedEditorTarget.item,
+      endpoint: handle.endpoint,
+      moved: false
+    };
+  }
+
   createResizeState(handle) {
     const target = this.selectedEditorTarget;
     const item = target.item;
@@ -464,6 +549,10 @@ export class LevelEditorScene extends Phaser.Scene {
 
     if (target.item.type === "movingPlatform") {
       return { width: 24, height: 8 };
+    }
+
+    if (target.kind === "solid" && target.item.type === "pillar") {
+      return { width: 16, height: 24 };
     }
 
     if (target.item.type === "block") {
@@ -531,16 +620,34 @@ export class LevelEditorScene extends Phaser.Scene {
     return true;
   }
 
-  flipSelectedSpike() {
-    if (!this.isSpikeTarget(this.selectedEditorTarget)) {
-      this.showStatus("Select a spike first, then press R to flip it.", "#ffe08a");
+  adjustSelectedObject() {
+    if (this.isSpikeTarget(this.selectedEditorTarget)) {
+      this.flipSelectedSpike();
       return;
     }
 
+    if (this.isMovingPlatformTarget(this.selectedEditorTarget)) {
+      this.toggleSelectedMovingPlatformAxis();
+      return;
+    }
+
+    this.showStatus("Select a spike or moving platform first.", "#ffe08a");
+  }
+
+  flipSelectedSpike() {
     const spike = this.selectedEditorTarget.item;
 
     spike.direction = spike.direction === "down" ? "up" : "down";
     this.markDirty(`Spike faces ${spike.direction}. Save when ready.`);
+    this.renderEditor();
+  }
+
+  toggleSelectedMovingPlatformAxis() {
+    const platform = this.selectedEditorTarget.item;
+    const nextAxis = platform.axis === "vertical" ? "horizontal" : "vertical";
+
+    this.setMovingPlatformAxis(platform, nextAxis);
+    this.markDirty(`Platform moves ${nextAxis}. Save when ready.`);
     this.renderEditor();
   }
 
@@ -660,6 +767,81 @@ export class LevelEditorScene extends Phaser.Scene {
     return true;
   }
 
+  movePlatformRangeHandle(pointerX, pointerY) {
+    const { platform, endpoint } = this.rangeState;
+    const axis = platform.axis === "vertical" ? "vertical" : "horizontal";
+
+    if (axis === "vertical") {
+      const maxY = Math.max(EDIT_AREA_TOP, EDIT_AREA_BOTTOM - platform.height);
+      const nextY = Phaser.Math.Clamp(
+        this.snapToGrid(pointerY - platform.height / 2),
+        EDIT_AREA_TOP,
+        maxY
+      );
+
+      if (platform[`${endpoint}Y`] === nextY && platform.fromX === platform.x && platform.toX === platform.x) {
+        return false;
+      }
+
+      platform[`${endpoint}Y`] = nextY;
+      platform.fromX = platform.x;
+      platform.toX = platform.x;
+      return true;
+    }
+
+    const maxX = Math.max(0, GAME_WIDTH - platform.width);
+    const nextX = Phaser.Math.Clamp(
+      this.snapToGrid(pointerX - platform.width / 2),
+      0,
+      maxX
+    );
+
+    if (platform[`${endpoint}X`] === nextX && platform.fromY === platform.y && platform.toY === platform.y) {
+      return false;
+    }
+
+    platform[`${endpoint}X`] = nextX;
+    platform.fromY = platform.y;
+    platform.toY = platform.y;
+    return true;
+  }
+
+  setMovingPlatformAxis(platform, axis) {
+    const maxX = Math.max(0, GAME_WIDTH - platform.width);
+    const maxY = Math.max(EDIT_AREA_TOP, EDIT_AREA_BOTTOM - platform.height);
+
+    platform.axis = axis;
+
+    if (axis === "vertical") {
+      platform.fromX = platform.x;
+      platform.toX = platform.x;
+      platform.fromY = Phaser.Math.Clamp(
+        platform.y - MOVING_PLATFORM_TRAVEL_DISTANCE,
+        EDIT_AREA_TOP,
+        maxY
+      );
+      platform.toY = Phaser.Math.Clamp(
+        platform.y + MOVING_PLATFORM_TRAVEL_DISTANCE,
+        EDIT_AREA_TOP,
+        maxY
+      );
+      return;
+    }
+
+    platform.fromX = Phaser.Math.Clamp(
+      platform.x - MOVING_PLATFORM_TRAVEL_DISTANCE,
+      0,
+      maxX
+    );
+    platform.toX = Phaser.Math.Clamp(
+      platform.x + MOVING_PLATFORM_TRAVEL_DISTANCE,
+      0,
+      maxX
+    );
+    platform.fromY = platform.y;
+    platform.toY = platform.y;
+  }
+
   applyToolAt(x, y, rawX, rawY) {
     const layout = this.level.layout;
     let placedObject = null;
@@ -682,18 +864,30 @@ export class LevelEditorScene extends Phaser.Scene {
       };
       layout.solids.push(placedObject);
       this.selectedEditorTarget = { kind: "solid", item: placedObject };
-    } else if (this.selectedTool === "movingPlatform") {
+    } else if (this.selectedTool === "pillar") {
+      placedObject = {
+        id: makeEditorObjectId("solid"),
+        type: "pillar",
+        style: "assetPillar",
+        ...clampRectToWorld(x - 8, y - 32, 16, 64)
+      };
+      layout.solids.push(placedObject);
+      this.selectedEditorTarget = { kind: "solid", item: placedObject };
+    } else if (
+      this.selectedTool === "movingPlatformHorizontal" ||
+      this.selectedTool === "movingPlatformVertical"
+    ) {
       const platform = {
         id: makeEditorObjectId("object"),
         type: "movingPlatform",
         ...clampRectToWorld(x - 32, y - 5, 64, 10)
       };
 
-      platform.fromX = Phaser.Math.Clamp(platform.x - 48, 0, GAME_WIDTH - platform.width);
-      platform.toX = Phaser.Math.Clamp(platform.x + 48, 0, GAME_WIDTH - platform.width);
-      platform.fromY = platform.y;
-      platform.toY = platform.y;
       platform.duration = 2600;
+      this.setMovingPlatformAxis(
+        platform,
+        this.selectedTool === "movingPlatformVertical" ? "vertical" : "horizontal"
+      );
       layout.objects.push(platform);
       this.selectedEditorTarget = { kind: "object", item: platform };
     } else if (this.selectedTool === "spike") {
@@ -855,16 +1049,54 @@ export class LevelEditorScene extends Phaser.Scene {
   }
 
   drawMovingPlatformTravel(platform) {
-    const travel = this.trackBuild(this.add.graphics().setDepth(4));
+    const isSelected = this.selectedEditorTarget?.item === platform;
+    const travel = this.trackBuild(this.add.graphics().setDepth(isSelected ? 27 : 4));
     const startX = (platform.fromX ?? platform.x) + platform.width / 2;
     const endX = (platform.toX ?? platform.x) + platform.width / 2;
-    const y = platform.y + platform.height / 2;
+    const startY = (platform.fromY ?? platform.y) + platform.height / 2;
+    const endY = (platform.toY ?? platform.y) + platform.height / 2;
+    const angle = Phaser.Math.Angle.Between(startX, startY, endX, endY);
 
-    travel.lineStyle(1, COLOR_VALUES.gold, 0.65);
-    travel.lineBetween(startX, y, endX, y);
+    travel.lineStyle(isSelected ? 2 : 1, COLOR_VALUES.gold, isSelected ? 0.95 : 0.65);
+    travel.lineBetween(startX, startY, endX, endY);
     travel.fillStyle(COLOR_VALUES.gold, 0.86);
-    travel.fillTriangle(startX, y, startX + 6, y - 4, startX + 6, y + 4);
-    travel.fillTriangle(endX, y, endX - 6, y - 4, endX - 6, y + 4);
+    this.drawTravelArrowHead(travel, startX, startY, angle);
+    this.drawTravelArrowHead(travel, endX, endY, angle + Math.PI);
+
+    if (isSelected) {
+      this.drawPlatformRangeHandle(travel, startX, startY);
+      this.drawPlatformRangeHandle(travel, endX, endY);
+    }
+  }
+
+  drawPlatformRangeHandle(graphics, x, y) {
+    graphics.fillStyle(0x120905, 0.92);
+    graphics.fillCircle(x, y, 7);
+    graphics.fillStyle(COLOR_VALUES.gold, 1);
+    graphics.fillCircle(x, y, 4);
+    graphics.lineStyle(1, 0xfff4c7, 0.9);
+    graphics.strokeCircle(x, y, 7);
+  }
+
+  drawTravelArrowHead(graphics, x, y, angle) {
+    const tipDistance = 6;
+    const backDistance = 4;
+    const halfWidth = 4;
+    const tipX = x + Math.cos(angle) * tipDistance;
+    const tipY = y + Math.sin(angle) * tipDistance;
+    const backX = x - Math.cos(angle) * backDistance;
+    const backY = y - Math.sin(angle) * backDistance;
+    const sideX = Math.cos(angle + Math.PI / 2) * halfWidth;
+    const sideY = Math.sin(angle + Math.PI / 2) * halfWidth;
+
+    graphics.fillTriangle(
+      tipX,
+      tipY,
+      backX + sideX,
+      backY + sideY,
+      backX - sideX,
+      backY - sideY
+    );
   }
 
   drawMovingPlatformSample(platform) {
@@ -876,6 +1108,11 @@ export class LevelEditorScene extends Phaser.Scene {
   drawSolidArt(rect) {
     if (rect.style === "backgroundFloor" || rect.type === "floor") {
       this.drawBackgroundFloor(rect);
+      return;
+    }
+
+    if (rect.style === "assetPillar" || rect.type === "pillar") {
+      this.drawAssetPillar(rect);
       return;
     }
 
@@ -968,6 +1205,55 @@ export class LevelEditorScene extends Phaser.Scene {
           .setOrigin(0)
           .setDepth(5)
       );
+    }
+  }
+
+  drawAssetPillar(rect) {
+    if (!this.textures.exists(PYRAMID_TILEGROUND_KEY)) {
+      const graphics = this.trackBuild(this.add.graphics().setDepth(4));
+
+      graphics.fillStyle(COLORS.stone, 1);
+      graphics.fillRect(rect.x, rect.y, rect.width, rect.height);
+      graphics.lineStyle(1, COLORS.wallDark, 0.85);
+      graphics.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      return;
+    }
+
+    const tileSize = 16;
+    const topFrame = 22;
+    const middleFrame = 34;
+    const lowerMiddleFrame = 46;
+    const bottomFrame = 58;
+    const tileCount = Math.max(2, Math.ceil(rect.height / tileSize));
+
+    for (let tileIndex = 0; tileIndex < tileCount; tileIndex += 1) {
+      let frame = middleFrame;
+
+      if (tileIndex === 0) {
+        frame = topFrame;
+      } else if (tileIndex === tileCount - 1) {
+        frame = bottomFrame;
+      } else if (tileIndex % 2 === 0) {
+        frame = lowerMiddleFrame;
+      }
+
+      const tileY = rect.y + tileIndex * tileSize;
+      const remainingHeight = rect.y + rect.height - tileY;
+
+      if (remainingHeight <= 0) {
+        break;
+      }
+
+      const pillarTile = this.trackBuild(
+        this.add
+          .image(rect.x, tileY, PYRAMID_TILEGROUND_KEY, frame)
+          .setOrigin(0)
+          .setDepth(5)
+      );
+
+      if (remainingHeight < tileSize) {
+        pillarTile.setCrop(0, 0, tileSize, remainingHeight);
+      }
     }
   }
 
@@ -1280,12 +1566,9 @@ export class LevelEditorScene extends Phaser.Scene {
       return;
     }
 
-    const platformTop = platform.bodyObject.y - platform.height / 2;
-
     this.ridingMovingPlatform = platform;
     platform.riderSeenAt = this.time.now;
     platform.riderOffsetX = this.player.x - platform.bodyObject.x;
-    platform.riderOffsetY = this.player.y - platformTop;
   }
 
   isConfirmedPlatformRider(platform, platformCenterX, platformCenterY) {
@@ -1356,6 +1639,21 @@ export class LevelEditorScene extends Phaser.Scene {
     }
   }
 
+  snapPlayerFeetToPlatformTop(platformTop) {
+    if (!this.player?.body) {
+      return;
+    }
+
+    this.player.body.updateFromGameObject();
+    const bodyBottom = this.player.body.y + this.player.body.height;
+    const correctionY = platformTop - bodyBottom;
+
+    if (Math.abs(correctionY) > 0.01) {
+      this.player.setY(this.player.y + correctionY);
+      this.player.body.updateFromGameObject();
+    }
+  }
+
   isHorizontalMoveInputDown() {
     if (!this.cursors || !this.keys) {
       return false;
@@ -1382,8 +1680,9 @@ export class LevelEditorScene extends Phaser.Scene {
       );
     }
 
-    this.player.setPosition(nextPlayerX, platformTop + (platform.riderOffsetY ?? 0));
+    this.player.setPosition(nextPlayerX, this.player.y);
     this.player.body.updateFromGameObject();
+    this.snapPlayerFeetToPlatformTop(platformTop);
     platform.riderSeenAt = this.time.now;
   }
 

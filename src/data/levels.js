@@ -65,14 +65,14 @@ export const LEVELS = [
     },
     solids: [
       { x: 0, y: 202, width: 130, height: 58, style: "backgroundFloor" },
-      { x: 104, y: 142, width: 58, height: 12, style: "ruinLedge" },
-      { x: 0, y: 102, width: 58, height: 12, style: "ruinLedge" },
-      { x: 0, y: 50, width: 25, height: 12, style: "ruinLedge" },
+      { x: 104, y: 142, width: 59 , height: 12, style: "ruinLedge" },
+      { x: 0, y: 102, width: 59, height: 12, style: "ruinLedge" },
+      { x: 0, y: 50, width: 29, height: 12, style: "ruinLedge" },
       { x: 224, y: 202, width: 140, height: 58, style: "ruinLedge" },
       { x: 430, y: 202, width: 50, height: 58, style: "backgroundFloor" },
     ],
     spikes: [
-      { x: 84, y: 202, width: 40 },
+      { x: 84, y: 202, width: 48 },
     ],
     blades: [
       { x1: 194, y1: 54, x2: 194, y2: 194, radius: 10, duration: 1700, phase: 180, broken: false },
@@ -107,8 +107,8 @@ export const LEVELS = [
     solids: [
       // Two box puzzle yards sit on the background floor, with an upper route unlocked by stacking movement.
       { x: 0, y: 202, width: GAME_WIDTH, height: 68, style: "backgroundFloor" }, // FLOOR
-      { x: 0, y: 102, width: 58, height: 12, style: "ruinLedge" }, // DOOR PLATFORM
-      { x: 80, y: 52, width: 58, height: 12, style: "ruinLedge" },
+      { x: 0, y: 102, width: 60, height: 12, style: "ruinLedge" }, // DOOR PLATFORM
+      { x: 80, y: 52, width: 60, height: 12, style: "ruinLedge" },
       { x: 150, y: 102, width: 240, height: 12, style: "ruinLedge" }, // wide platform
       // { x: 196, y: 184, width: 52, height: 12, style: "ruinLedge" },
       // { x: 226, y: 202, width: 118, height: 38, style: "backgroundFloor" },
@@ -124,9 +124,9 @@ export const LEVELS = [
     ],
     spikes: [
       // // The first gap is the teaching hazard: cross it with a jump, not by rushing the box.
-      { x: 150, y: 102, width: 10 },
-      { x: 220, y: 102, width: 15 },
-      { x: 300, y: 102, width: 20 },
+      { x: 150, y: 102, width: 12 },
+      { x: 220, y: 102, width: 24 },
+      { x: 300, y: 102, width: 24 },
       // { x: 58, y: 104, width: 58, direction: "down" }
     ],
     blades: [
@@ -148,7 +148,7 @@ export const LEVELS = [
     puzzle: {
       requiredSwitchCount: 2,
       switches: [
-        { id: "left-moon-seal", x: 70, y: 167, width: 30, height: 8 },
+        { id: "left-moon-seal", x: 72, y: 167, width: 30, height: 8 },
         { id: "right-moon-seal", x: 350, y: 224, width: 30, height: 8 }
       ]
     },
@@ -161,19 +161,19 @@ export const LEVELS = [
       { x: 0, y: 232, width: 480, height: 38, style: "backgroundFloor" },
 
       // Same pillar collision positions, but now rendered using actual Pyramid Ruins assets.
-      { x: 102, y: 78, width: 16, height: 154, style: "assetPillar" },
+      { x: 102, y: 88, width: 16, height: 154, style: "assetPillar" },
 
       // This small left platform stays, but the far-left overlapped platform is now invisible.
       { x: 52 + 20, y: 175, width: 30, height: 10, style: "ruinLedge" },
-      { x: 0, y: 120, width: 38, height: 10, style: "ruinLedge" },
+      { x: 0, y: 120, width: 44, height: 10, style: "ruinLedge" },
 
       // This small right platform stays, but the far-right overlapped platform is now invisible.
-      { x: 395, y: 175, width: 35, height: 10, style: "ruinLedge" },
+      { x: 395, y: 175, width: 42, height: 10, style: "ruinLedge" },
       { x: 433, y: 120, width: 35, height: 10, style: "ruinLedge" },
 
-      { x: 196, y: 118, width: 16, height: 114, style: "assetPillar" },
-      { x: 290, y: 118, width: 16, height: 114, style: "assetPillar" },
-      { x: 384, y: 118, width: 16, height: 100, style: "assetPillar" }
+      { x: 196, y: 120, width: 16, height: 114, style: "assetPillar" },
+      { x: 290, y: 120, width: 16, height: 114, style: "assetPillar" },
+      { x: 384, y: 120, width: 16, height: 100, style: "assetPillar" }
     ],
     crushers: [
       { x: 156, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 0, fake: false },
@@ -184,7 +184,8 @@ export const LEVELS = [
       { x: 344, topY: 86, width: 56, height: 24, drop: 116, period: 1800, phase: 0, fake: true }
     ],
     spikes: [
-      { x: 69, y: 187, width: 34, direction: "down" }
+      { x: 69, y: 187, width: 34, direction: "down" },
+      { x: 394, y: 187, width: 46, direction: "down" }
     ]
   },
     {
@@ -208,7 +209,7 @@ export const LEVELS = [
         { id: "lower-box-seal", x: 108, y: 205, width: 32, height: 8, activation: "box" },
 
         // Second seal is reached through the upper blade route.
-        { id: "upper-seal", x: 326, y: 114, width: 30, height: 8 }
+        { id: "upper-seal", x: 320, y: 112, width: 30, height: 8 }
       ]
     },
     decorations: [
@@ -250,15 +251,15 @@ export const LEVELS = [
 
       // Small upper-route punishers
       { x: 302, y: 136, width: 12 },
-      { x: 350, y: 122, width: 12 },
+      { x: 352, y: 122, width: 12 },
 
       // Decorative unreachable ceiling spikes
       //{ x: 62, y: 160, width: 58, direction: "down" },
-      { x: 190, y: 75, width: 35, direction: "down" }
+      { x: 187, y: 77, width: 47, direction: "down" }
     ],
     blades: [
       // Vertical blade guarding the first jump out of the left puzzle yard.
-      { x1: 164, y1: 154, x2: 164, y2: 196, radius: 10, duration: 1700, phase: 180, broken: false },
+      { x1: 163, y1: 104, x2: 163, y2: 196, radius: 10, duration: 1500, phase: 180, broken: false },
 
       // Horizontal blade pressuring the upper route near the second seal.
       { x1: 286, y1: 108, x2: 346, y2: 108, radius: 10, duration: 1900, phase: 520, broken: false }

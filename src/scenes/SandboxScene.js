@@ -269,18 +269,21 @@ export class SandboxScene extends Phaser.Scene {
             fontFamily: FONTS.ui,
             fontSize: "11px",
             color: COLORS.gold,
-            wordWrap: { width: 164, useAdvancedWrap: true }
+            wordWrap: { width: 130, useAdvancedWrap: true }
           })
           .setOrigin(0, 0.5)
           .setDepth(124);
-        const openButton = createTextButton(this, listBounds.x + 232, y, "Open", () => {
+        const playButton = createTextButton(this, listBounds.x + 184, y, "Play", () => {
+          this.scene.start("LevelEditorScene", { levelId: level.id, mode: "play" });
+        }, 54, { variant: "danger" }).setDepth(126);
+        const openButton = createTextButton(this, listBounds.x + 244, y, "Open", () => {
           this.scene.start("LevelEditorScene", { levelId: level.id, mode: "edit" });
-        }, 58, { variant: "secondary" }).setDepth(126);
-        const deleteButton = createTextButton(this, listBounds.x + 304, y, "Delete", () => {
+        }, 54, { variant: "secondary" }).setDepth(126);
+        const deleteButton = createTextButton(this, listBounds.x + 310, y, "Delete", () => {
           deleteLevel(level.id);
-        }, 66, { variant: "danger" }).setDepth(126);
+        }, 62, { variant: "danger" }).setDepth(126);
 
-        listObjects.push(rowLine, nameText, openButton, deleteButton);
+        listObjects.push(rowLine, nameText, playButton, openButton, deleteButton);
       });
     };
     const handleWheel = (_pointer, _gameObjects, _deltaX, deltaY) => {
@@ -819,12 +822,9 @@ export class SandboxScene extends Phaser.Scene {
       return;
     }
 
-    const platformTop = platform.bodyObject.y - platform.height / 2;
-
     this.ridingMovingPlatform = platform;
     platform.riderSeenAt = this.time.now;
     platform.riderOffsetX = this.player.x - platform.bodyObject.x;
-    platform.riderOffsetY = this.player.y - platformTop;
   }
 
   isConfirmedPlatformRider(platform, platformCenterX) {
@@ -891,6 +891,21 @@ export class SandboxScene extends Phaser.Scene {
     }
   }
 
+  snapPlayerFeetToPlatformTop(platformTop) {
+    if (!this.player?.body) {
+      return;
+    }
+
+    this.player.body.updateFromGameObject();
+    const bodyBottom = this.player.body.y + this.player.body.height;
+    const correctionY = platformTop - bodyBottom;
+
+    if (Math.abs(correctionY) > 0.01) {
+      this.player.setY(this.player.y + correctionY);
+      this.player.body.updateFromGameObject();
+    }
+  }
+
   isHorizontalMoveInputDown() {
     if (!this.cursors || !this.keys) {
       return false;
@@ -918,6 +933,7 @@ export class SandboxScene extends Phaser.Scene {
 
     this.player.setPosition(nextPlayerX, this.player.y);
     this.player.body.updateFromGameObject();
+    this.snapPlayerFeetToPlatformTop(platform.bodyObject.y - platform.height / 2);
     platform.riderSeenAt = this.time.now;
   }
 

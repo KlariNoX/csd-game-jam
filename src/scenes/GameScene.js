@@ -1132,12 +1132,9 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const platformTop = movingPlatform.bodyObject.y - movingPlatform.height / 2;
-
     this.ridingMovingPlatform = movingPlatform;
     movingPlatform.riderSeenAt = this.time.now;
     movingPlatform.riderOffsetX = this.player.x - movingPlatform.bodyObject.x;
-    movingPlatform.riderOffsetY = this.player.y - platformTop;
   }
 
   isConfirmedMovingPlatformRider(movingPlatform, platformCenterX, platformCenterY) {
@@ -1210,6 +1207,21 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  snapPlayerFeetToPlatformTop(platformTop) {
+    if (!this.player?.body) {
+      return;
+    }
+
+    this.player.body.updateFromGameObject();
+    const bodyBottom = this.player.body.y + this.player.body.height;
+    const correctionY = platformTop - bodyBottom;
+
+    if (Math.abs(correctionY) > 0.01) {
+      this.player.setY(this.player.y + correctionY);
+      this.player.body.updateFromGameObject();
+    }
+  }
+
   isHorizontalMoveInputDown() {
     if (!this.cursors || !this.keys) {
       return false;
@@ -1237,10 +1249,11 @@ export class GameScene extends Phaser.Scene {
       );
     }
 
-    const nextPlayerY = platformTop + (movingPlatform.riderOffsetY ?? 0);
+    const nextPlayerY = this.player.y + deltaY;
 
     this.player.setPosition(nextPlayerX, nextPlayerY);
     this.player.body.updateFromGameObject();
+    this.snapPlayerFeetToPlatformTop(platformTop);
     movingPlatform.riderSeenAt = this.time.now;
   }
 

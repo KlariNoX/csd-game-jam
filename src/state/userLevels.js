@@ -15,6 +15,33 @@ function makeObjectId(prefix) {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 }
 
+function getSolidStyle(solid) {
+  if (solid?.style) {
+    return solid.style;
+  }
+
+  if (solid?.type === "floor") {
+    return "backgroundFloor";
+  }
+
+  if (solid?.type === "pillar") {
+    return "assetPillar";
+  }
+
+  return "ruinLedge";
+}
+
+function getMovingPlatformAxis(object) {
+  if (object?.axis === "vertical" || object?.axis === "horizontal") {
+    return object.axis;
+  }
+
+  const horizontalTravel = Math.abs((object?.toX ?? object?.x ?? 0) - (object?.fromX ?? object?.x ?? 0));
+  const verticalTravel = Math.abs((object?.toY ?? object?.y ?? 0) - (object?.fromY ?? object?.y ?? 0));
+
+  return verticalTravel > horizontalTravel ? "vertical" : "horizontal";
+}
+
 export function createDefaultLevelLayout() {
   return {
     playerStart: { x: 42, y: 198 },
@@ -79,20 +106,25 @@ function normalizeLayout(layout, levelVersion) {
       : null
     : defaultLayout.goal;
   const solids = Array.isArray(layout.solids)
-    ? layout.solids.map((solid, index) => ({
-      ...normalizeRect(solid, {
-        id: makeObjectId("solid"),
-        type: solid?.type || "ledge",
-        style: solid?.style || (solid?.type === "floor" ? "backgroundFloor" : "ruinLedge"),
-        x: 0,
-        y: 207,
-        width: 64,
-        height: 12
-      }),
-      id: solid?.id || `solid-${index}`,
-      type: solid?.type || "ledge",
-      style: solid?.style || (solid?.type === "floor" ? "backgroundFloor" : "ruinLedge")
-    }))
+    ? layout.solids.map((solid, index) => {
+      const type = solid?.type || "ledge";
+      const style = getSolidStyle({ ...solid, type });
+
+      return {
+        ...normalizeRect(solid, {
+          id: makeObjectId("solid"),
+          type,
+          style,
+          x: 0,
+          y: 207,
+          width: type === "pillar" ? 16 : 64,
+          height: type === "pillar" ? 64 : 12
+        }),
+        id: solid?.id || `solid-${index}`,
+        type,
+        style
+      };
+    })
     : defaultLayout.solids;
   const hazards = Array.isArray(layout.hazards)
     ? layout.hazards.map((hazard, index) => {
@@ -123,15 +155,18 @@ function normalizeLayout(layout, levelVersion) {
         width: object?.type === "movingPlatform" ? 64 : 20,
         height: object?.type === "movingPlatform" ? 10 : 18
       });
+      const maxTravelX = Math.max(0, GAME_WIDTH - normalizedObject.width);
+      const maxTravelY = Math.max(0, GAME_HEIGHT - normalizedObject.height);
 
       return {
         ...normalizedObject,
         id: object?.id || `object-${index}`,
         type: object?.type || "block",
-        fromX: clampNumber(object?.fromX, 0, GAME_WIDTH, normalizedObject.x),
-        toX: clampNumber(object?.toX, 0, GAME_WIDTH, normalizedObject.x),
-        fromY: clampNumber(object?.fromY, 0, GAME_HEIGHT, normalizedObject.y),
-        toY: clampNumber(object?.toY, 0, GAME_HEIGHT, normalizedObject.y),
+        axis: object?.type === "movingPlatform" ? getMovingPlatformAxis(object) : undefined,
+        fromX: clampNumber(object?.fromX, 0, maxTravelX, normalizedObject.x),
+        toX: clampNumber(object?.toX, 0, maxTravelX, normalizedObject.x),
+        fromY: clampNumber(object?.fromY, 0, maxTravelY, normalizedObject.y),
+        toY: clampNumber(object?.toY, 0, maxTravelY, normalizedObject.y),
         duration: clampNumber(object?.duration, 600, 9000, 2600)
       };
     })
